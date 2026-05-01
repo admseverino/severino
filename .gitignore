@@ -38,8 +38,3 @@ yarn-error.log*
 next-env.d.ts
 hidrosync-service/*.tsbuildinfo
 hidrosync-service/next-env.d.ts
-
-# prisma
-/prisma/migrations/
-/prisma/dev.db*
-
