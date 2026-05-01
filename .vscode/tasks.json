@@ -1,0 +1,51 @@
+// .vscode/tasks.json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Load Project Aliases",
+            "type": "shell",
+            "command": "source .vscode/project_aliases",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "windows": {
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "shell": {
+                        "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+                        "args": ["-lc"]
+                    }
+                }
+            },
+            "linux": {
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "shell": {
+                        "executable": "/bin/bash",
+                        "args": ["-lc"]
+                    }
+                }
+            },
+            "osx": {
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "shell": {
+                        "executable": "/bin/bash",
+                        "args": ["-lc"]
+                    }
+                }
+            },
+            "problemMatcher": [],
+            "group": "none",
+            "presentation": {
+                "reveal": "never",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}

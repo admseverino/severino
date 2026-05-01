@@ -1,0 +1,70 @@
+# .project_aliases
+# 
+# Service	              Command to Run                      Example
+# Frontend	              deployfront [major|minor|patch]     deployfront patch
+# Dashboard	              deploydash [major|minor|patch]      deploydash minor
+
+
+function create_and_push_tag() {
+    local SERVICE=$1
+    local BUMP_TYPE=${2:-patch}  # Default to patch if not specified
+    
+    echo "Processing service: $SERVICE (bump type: $BUMP_TYPE)"
+    
+    # Validate bump type
+    if [[ ! "$BUMP_TYPE" =~ ^(major|minor|patch)$ ]]; then
+        echo "❌ Invalid bump type: $BUMP_TYPE. Use 'major', 'minor', or 'patch'."
+        return 1
+    fi
+
+    # Get the latest tag for this service
+    LAST_TAG=$(git tag -l "$SERVICE-*" | sort -V | tail -n1)
+    
+    if [ -z "$LAST_TAG" ]; then
+        # No existing tag, start with 0.0.1
+        NEW_VERSION="0.0.1"
+        NEW_TAG="$SERVICE-$NEW_VERSION"
+        echo "No previous tag found. Creating initial tag: $NEW_TAG"
+    else
+        # Parse the version from the last tag
+        VERSION=${LAST_TAG#"$SERVICE-"}
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+        
+        # Increment based on bump type
+        case $BUMP_TYPE in
+            major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+            minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+            patch)
+                PATCH=$((PATCH + 1))
+                ;;
+        esac
+        
+        NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+        NEW_TAG="$SERVICE-$NEW_VERSION"
+        echo "Found latest tag: $LAST_TAG"
+        echo "Creating new tag: $NEW_TAG"
+    fi
+
+    # Create an annotated tag, then push 'main' and the new tag
+    git tag -a "$NEW_TAG" -m "Automated deployment tag for $SERVICE $NEW_VERSION" \
+    && git push origin main "$NEW_TAG"
+
+    if [ $? -eq 0 ]; then
+        echo "✅ Successfully pushed main and tag $NEW_TAG to origin."
+    else
+        echo "❌ Tag or push failed. Check error messages."
+    fi
+}
+
+# Define the deployment commands (these pass through the bump type argument)
+alias deployfront='create_and_push_tag front'
+alias deploydash='create_and_push_tag dash'
+
+export -f create_and_push_tag # Export function for sub-shells if necessary

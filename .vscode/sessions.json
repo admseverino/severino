@@ -1,0 +1,71 @@
+{
+    "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v11/terminal-keeper.json",
+    "theme": "tribe",
+    "active": "default",
+    "activateOnStartup": true,
+    "noClear": true,
+    "keepExistingTerminals": false,
+    "sessions": {
+        "default": [
+            {
+                "name": "gcloud auth",
+                "autoExecuteCommands": false,
+                "icon": "person",
+                "color": "terminal.ansiGreen",
+                "commands": [
+                    "gcloud auth login"
+                ]
+            },
+            [
+                {
+                    "name": "job",
+                    "autoExecuteCommands": false,
+                    "cwd": "scraping-job",
+                    "icon": "zap",
+                    "commands": [
+                        "node scraping-job.js"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "dash",
+                    "autoExecuteCommands": false,
+                    "cwd": "dash-service",
+                    "icon": "server",
+                    "commands": [
+                        "npm run dev"
+                    ]
+                },
+                {
+                    "name": "front",
+                    "autoExecuteCommands": false,
+                    "cwd": "option-service",
+                    "icon": "home",
+                    "commands": [
+                        "npm run dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "git",
+                    "icon": "git-commit",
+                    "autoExecuteCommands": false,
+                    "commands": [
+                        "git fetch"
+                    ]
+                }
+            ]
+        ],
+        "saved-session": [
+            {
+                "name": "connect",
+                "autoExecuteCommands": false,
+                "commands": [
+                    ""
+                ]
+            }
+        ]
+    }
+}
