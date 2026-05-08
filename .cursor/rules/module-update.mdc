@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+---
+Any changes must be made mainly on the module folder. Only update root if there are schema changes (see docs/SCHEMA.md for reference).
+
+When there are visual changes use Shadcn MCP Server
+
+Planning Rule:
+
+- Reuse components whenever possible
+- Use whole blocks where possible (e.g., login, calendar)
+- If there is a need for new component, then first call MCP demo tool to see how it is used before implementation.
+
+Implementation Rule:
+
+- Use docs/VISUAL_GUIDE.md

@@ -3,7 +3,7 @@
     "theme": "tribe",
     "active": "default",
     "activateOnStartup": true,
-    "noClear": true,
+    "noClear": false,
     "keepExistingTerminals": false,
     "sessions": {
         "default": [
@@ -18,32 +18,76 @@
             },
             [
                 {
-                    "name": "job",
+                    "name": "all-services (turbo)",
                     "autoExecuteCommands": false,
-                    "cwd": "scraping-job",
-                    "icon": "zap",
+                    "icon": "play-circle",
+                    "color": "terminal.ansiCyan",
                     "commands": [
-                        "node scraping-job.js"
+                        "pnpm run dev --continue"
                     ]
                 }
             ],
             [
                 {
-                    "name": "dash",
+                    "name": "option-service",
                     "autoExecuteCommands": false,
-                    "cwd": "dash-service",
-                    "icon": "server",
+                    "icon": "home",
                     "commands": [
-                        "npm run dev"
+                        "pnpm --filter option-service run dev"
                     ]
                 },
                 {
-                    "name": "front",
+                    "name": "dash-service",
                     "autoExecuteCommands": false,
-                    "cwd": "option-service",
-                    "icon": "home",
+                    "icon": "server",
                     "commands": [
-                        "npm run dev"
+                        "pnpm --filter dash-service run dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "scraping-function",
+                    "autoExecuteCommands": false,
+                    "icon": "gear",
+                    "commands": [
+                        "pnpm --filter scraping-function run dev"
+                    ]
+                },
+                {
+                    "name": "surface-sync-function",
+                    "autoExecuteCommands": false,
+                    "icon": "gear",
+                    "commands": [
+                        "pnpm --filter surface-sync-function run dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "scraping-job",
+                    "autoExecuteCommands": false,
+                    "icon": "zap",
+                    "commands": [
+                        "pnpm --filter scraping-job scrape:dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "test option-service",
+                    "autoExecuteCommands": false,
+                    "icon": "beaker",
+                    "commands": [
+                        "pnpm --filter option-service run typecheck:e2e && pnpm --filter option-service run test:e2e"
+                    ]
+                },
+                {
+                    "name": "test option-dash",
+                    "autoExecuteCommands": false,
+                    "icon": "beaker",
+                    "commands": [
+                        "pnpm --filter dash-service run test:e2e"
                     ]
                 }
             ],
@@ -53,7 +97,7 @@
                     "icon": "git-commit",
                     "autoExecuteCommands": false,
                     "commands": [
-                        "git fetch"
+                        "git "
                     ]
                 }
             ]

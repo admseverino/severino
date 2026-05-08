@@ -1,0 +1,90 @@
+# Playwright Testing Guide (`hidrosync-service`)
+
+## Scope
+- Use this guide for end-to-end browser testing in `hidrosync-service`.
+- Prefer deterministic smoke flows first, then expand to role-based and regression scenarios.
+- Run from repository root unless noted otherwise.
+
+## 1) Quick Start
+
+### Install dependencies
+```bash
+pnpm install
+pnpm --filter hidrosync-service run test:e2e:install
+```
+
+### Start target app(s)
+```bash
+# Terminal 1
+pnpm --filter hidrosync-service run dev
+
+### Run existing `hidrosync-service` Playwright tests
+```bash
+# CI-style (headless)
+pnpm --filter hidrosync-service run test:e2e
+
+# Cursor Browser interactive flow
+pnpm --filter hidrosync-service run test:e2e:cursor
+```
+
+## 2) Service-Specific Instructions
+
+## `hidrosync-service`
+- Existing E2E location: `hidrosync-service/tests/e2e`.
+- Existing config: `hidrosync-service/playwright.config.ts`.
+- Existing scripts:
+  - `pnpm --filter hidrosync-service run typecheck:e2e`
+  - `pnpm --filter hidrosync-service run test:e2e`
+  - `pnpm --filter hidrosync-service run test:e2e:cursor`
+- If auth tests are needed, define:
+  - `E2E_USER_EMAIL`
+  - `E2E_USER_PASSWORD`
+  - `E2E_ADMIN_EMAIL`
+  - `E2E_ADMIN_PASSWORD`
+
+## 3) MCP Workflow (Required)
+
+Use both MCP servers when running manual, agent-assisted browser validation:
+
+## Server A: `user-playwright` (DOM-first stable automation)
+- Best for semantic locators, deterministic interactions, and assertions.
+- Core flow:
+  1. `browser_navigate`
+  2. `browser_snapshot`
+  3. `browser_click` / `browser_type` / `browser_select_option`
+  4. `browser_wait_for`
+  5. `browser_network_requests` (API verification)
+  6. `browser_take_screenshot`
+  7. `browser_close`
+
+## Server B: `user-playwright-vision` (pixel/coordinate fallback)
+- Use when DOM locators are unstable, overlays exist, or canvas-heavy UI is involved.
+- Prefer standard DOM actions first; only fall back to XY actions when needed.
+- Useful extras include:
+  - `browser_mouse_move_xy`
+  - `browser_mouse_click_xy`
+  - `browser_mouse_drag_xy`
+  - `browser_mouse_wheel`
+
+## Recommended combined strategy
+1. Start each test case with `user-playwright`.
+2. If target element is visually present but hard to locate via DOM, switch to `user-playwright-vision`.
+3. Return to DOM-first assertions (`snapshot`, network checks) after the visual action.
+4. Save screenshot evidence on failures.
+
+## 4) Best Practices
+- Use stable selectors (`data-testid`) for interactive controls.
+- Keep each spec independent: no shared mutable state across tests.
+- Avoid relying on animation timing; wait on UI state or network completion.
+- Keep smoke tests short and business-critical; move exhaustive permutations to lower-level tests.
+- Use seeded test users and deterministic fixture data.
+- Assert both UI outcome and backend/network side effect when relevant.
+- Capture screenshots/traces only on failure to reduce noise.
+- Do not test third-party availability directly (mock where reasonable).
+
+## 5) Definition of Done for New E2E Coverage
+- Test can run locally only with no manual steps.
+- No hard-coded sleeps where state-based waiting is possible.
+- Failing assertions provide actionable logs/screenshots.
+- Test is tagged/scoped by feature area.
+- Flake rate remains near zero over repeated local runs.
