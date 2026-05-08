@@ -150,7 +150,7 @@ export function Header({ showFullNav = true, showGoogle }: HeaderProps): React.J
             />
           </Link>
 
-          <div className="flex flex-1 md:justify-end items-center pr-2 md:pr-6">
+          <div className="flex min-w-0 flex-1 items-center justify-end pr-2 md:pr-6">
             {session?.user ? (
               <UserMenu user={session.user} />
             ) : (
