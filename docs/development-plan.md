@@ -11,78 +11,89 @@ The plan has two axes: a **folder scaffold** (so the codebase stays navigable as
 
 ---
 
-## 1. Folder Scaffold (`hidrosync-service/`)
+## 1. Folder Scaffold (monorepo)
 
-The README commits to Next.js 14 App Router + shadcn + raw `pg`. The workflow has clear bounded contexts (onboarding, periods, readings, consumption, billing, audit) — make those first-class folders so they don't bleed into each other.
+The README commits to Next.js 14 App Router + shadcn + raw `pg`. The workflow has clear bounded contexts (onboarding, periods, readings, consumption, billing, audit) — make those first-class folders in the app so they don't bleed into each other.
+
+**Drizzle stays at repo root**, not under `hidrosync-service/lib/`. Follow the same layout as [`reference-code/packages/db`](../reference-code/packages/db): a small **workspace package** (`packages/db`) owns the Drizzle schema (`src/schema/`), pool + client wiring (`src/client.ts`, `src/pool.ts` or equivalent), **SQL migrations** (`migrations/` + `drizzle.config.ts`), and **reusable query helpers** (e.g. `src/queries/` — period gates, scope joins, anything multiple `modules/` need). `hidrosync-service` lists that package as a workspace dependency and imports the typed client and schema from there; the Next app does not duplicate schema or a second Drizzle entry point.
 
 ```plaintext
-hidrosync-service/
-├── app/                              # App Router (UI + thin route handlers)
-│   ├── (marketing)/                  # public landing, login (route group, no auth)
-│   ├── (app)/                        # auth-required shell
-│   │   ├── onboarding/               # §1 prompt → preview → commit
-│   │   ├── meters/                   # listing, QR print
-│   │   ├── reading/                  # §4 capture + §5 review (filters)
-│   │   ├── consumption/              # §6 admin views
-│   │   ├── billing/                  # §7 export
-│   │   ├── admin/                    # condo config, users, audit log
-│   │   └── tenant/                   # §6 viewer-scoped portal
-│   └── api/
-│       ├── auth/[...nextauth]/
-│       ├── onboarding/
-│       ├── readings/
-│       ├── periods/                  # state transitions
-│       ├── billing/
-│       ├── scheduler/                # cron-target endpoints
-│       └── webhooks/
-├── modules/                          # server-side domain logic (NOT React)
-│   ├── auth/                         # NextAuth config, session helpers
-│   ├── rbac/                         # grants, requireRole(), policy fns
-│   ├── condos/                       # condos + condo_config
-│   ├── groups/
-│   ├── units/
-│   ├── meters/                       # meters + linked_meters polymorphism
-│   ├── readings/                     # capture, EXIF, AI adapter wiring
-│   ├── periods/                      # state machine + scheduler driver
-│   ├── consumption/                  # per-meter and common-area math
-│   ├── billing/                      # CSV generation + versioning
-│   ├── audit/                        # write-only log helper
-│   ├── ai/                           # OpenRouter adapter (meter value extraction)
-│   └── notifications/
-├── components/
-│   ├── ui/                           # shadcn primitives
-│   ├── forms/
-│   ├── qr/                           # QR render, print grid, scanner
-│   ├── reading/                      # capture widget, anomaly badges
-│   └── layout/
-├── lib/
-│   ├── db/                           # Drizzle client, schema, query helpers
-│   ├── gcs/                          # signed URLs, uploads
-│   ├── exif/                         # EXIF parser
-│   ├── csv/                          # billing export writer
-│   └── validation/                   # zod schemas shared client/server
-├── drizzle/                          # generated migrations + drizzle config
-├── scripts/
-│   ├── setup-database.ts
-│   ├── create-admin.ts
-│   └── seed-dev.ts
-├── types/                            # cross-cutting TS types only
-├── tests/
-│   ├── e2e/                          # Playwright (per milestone)
-│   └── unit/
-├── docs/                             # app-specific docs (visual guide, etc.)
-└── public/
+hidrosync/
+├── packages/
+│   └── db/                           # workspace package — Drizzle only (mirror reference-code/packages/db)
+│       ├── src/
+│       │   ├── schema/               # table definitions (split by domain as needed)
+│       │   ├── client.ts             # Drizzle client + pool wiring
+│       │   ├── queries/              # shared query helpers (getOpenPeriod, scope helpers, …)
+│       │   └── migrate.ts            # entry for drizzle-kit migrate / CI
+│       ├── migrations/               # generated SQL (committed)
+│       └── drizzle.config.ts
+├── hidrosync-service/
+│   ├── app/                          # App Router (UI + thin route handlers)
+│   │   ├── (marketing)/              # public landing, login (route group, no auth)
+│   │   ├── (app)/                    # auth-required shell
+│   │   │   ├── onboarding/           # §1 prompt → preview → commit
+│   │   │   ├── meters/               # listing, QR print
+│   │   │   ├── reading/              # §4 capture + §5 review (filters)
+│   │   │   ├── consumption/          # §6 admin views
+│   │   │   ├── billing/              # §7 export
+│   │   │   ├── admin/                # condo config, users, audit log
+│   │   │   └── tenant/               # §6 viewer-scoped portal
+│   │   └── api/
+│   │       ├── auth/[...nextauth]/
+│   │       ├── onboarding/
+│   │       ├── readings/
+│   │       ├── periods/              # state transitions
+│   │       ├── billing/
+│   │       ├── scheduler/            # cron-target endpoints
+│   │       └── webhooks/
+│   ├── modules/                      # server-side domain logic (NOT React)
+│   │   ├── auth/                     # NextAuth config, session helpers
+│   │   ├── rbac/                     # grants, requireRole(), policy fns
+│   │   ├── condos/                   # condos + condo_config
+│   │   ├── groups/
+│   │   ├── units/
+│   │   ├── meters/                   # meters + linked_meters polymorphism
+│   │   ├── readings/                 # capture, EXIF, AI adapter wiring
+│   │   ├── periods/                  # state machine + scheduler driver
+│   │   ├── consumption/              # per-meter and common-area math
+│   │   ├── billing/                  # CSV generation + versioning
+│   │   ├── audit/                    # write-only log helper
+│   │   ├── ai/                       # OpenRouter adapter (meter value extraction)
+│   │   └── notifications/
+│   ├── components/
+│   │   ├── ui/                       # shadcn primitives
+│   │   ├── forms/
+│   │   ├── qr/                       # QR render, print grid, scanner
+│   │   ├── reading/                  # capture widget, anomaly badges
+│   │   └── layout/
+│   ├── lib/                          # app-local utilities only (no Drizzle)
+│   │   ├── gcs/                      # signed URLs, uploads
+│   │   ├── exif/                     # EXIF parser
+│   │   ├── csv/                      # billing export writer
+│   │   └── validation/               # zod schemas shared client/server
+│   ├── scripts/
+│   │   ├── setup-database.ts
+│   │   ├── create-admin.ts
+│   │   └── seed-dev.ts
+│   ├── types/                        # cross-cutting TS types only
+│   ├── tests/
+│   │   ├── e2e/                      # Playwright (per milestone)
+│   │   └── unit/
+│   ├── docs/                         # app-specific docs (visual guide, etc.)
+│   └── public/
+└── …                                 # redirect-service, docs/, etc.
 ```
 
 ### Why `modules/` and not just `lib/`
 
-Each section of the workflow (`§4 Meter Reading`, `§5 Review`, `§6 Consumption`, `§7 Billing`, `Meter Lifecycle`, `Audit Log`) maps to a `modules/<context>` folder you can grep for. `lib/` stays reserved for genuinely generic utilities (db client, GCS, EXIF parsing, CSV writer) that have no domain knowledge.
+Each section of the workflow (`§4 Meter Reading`, `§5 Review`, `§6 Consumption`, `§7 Billing`, `Meter Lifecycle`, `Audit Log`) maps to a `hidrosync-service/modules/<context>` folder you can grep for. **`packages/db`** holds everything that talks to Postgres types and SQL shape (schema, client, migrations, cross-cutting query helpers). **`hidrosync-service/lib/`** stays for app-local, non-DB infrastructure (GCS, EXIF, CSV writer, shared Zod) and must not reintroduce a second Drizzle layer.
 
 ### Route group conventions
 
 - `(marketing)` — unauthenticated public surface (landing, login, password reset).
 - `(app)` — authenticated shell with the global nav, role-aware sidebar, condo switcher.
-- `app/api/` — route handlers. Keep them thin: parse + authorize + delegate to `modules/`.
+- `hidrosync-service/app/api/` — route handlers. Keep them thin: parse + authorize + delegate to `hidrosync-service/modules/`.
 
 ---
 
@@ -92,14 +103,14 @@ These foundations every later milestone depends on, so build them once with care
 
 | Concern | What to scaffold |
 |---|---|
-| **DB schema + migrations** | Drizzle ORM with the full schema from `hidrosync_workflow.md §Data Model`. `drizzle-kit generate` produces migrations; `drizzle-kit migrate` applies them. See [`architecture-decisions.md`](./architecture-decisions.md#41-orm--migrations-drizzle). |
-| **RBAC primitives** | `modules/rbac/` exports `getEffectiveGrants(userId, condoId)` and `requireRole(scope, role)`. Every server action and route handler funnels through it. The "union of grants" rule from the spec lives here, nowhere else. |
-| **Period-aware queries** | Helpers like `getOpenPeriod(condoId)` and `assertPeriodState(periodId, ['reading_open'])` so route handlers don't reimplement state-machine guards. |
-| **Audit log writer** | `modules/audit/log.ts` with one function `writeAudit({ actor, entity, action, before, after, reason })`. **Every mutation** calls it — make it required by passing it as the first argument of the transaction helper. |
+| **DB schema + migrations** | Workspace package `packages/db`: Drizzle ORM with the full schema from `hidrosync_workflow.md §Data Model`. `drizzle-kit generate` writes into `packages/db/migrations`; migrate runs from that package (or via root/workspace script). The Next app imports schema and client only from this package. See [`architecture-decisions.md`](./architecture-decisions.md#41-orm--migrations-drizzle). |
+| **RBAC primitives** | `hidrosync-service/modules/rbac/` exports `getEffectiveGrants(userId, condoId)` and `requireRole(scope, role)`. Every server action and route handler funnels through it. The "union of grants" rule from the spec lives here, nowhere else. |
+| **Period-aware queries** | Implement in `packages/db/src/queries/` (or equivalent) so all callers share one typed definition: e.g. `getOpenPeriod(condoId)`, `assertPeriodState(periodId, ['reading_open'])`. `hidrosync-service/modules/periods` orchestrates the state machine; DB reads/writes go through the workspace package. |
+| **Audit log writer** | `hidrosync-service/modules/audit/log.ts` with one function `writeAudit({ actor, entity, action, before, after, reason })`. **Every mutation** calls it — make it required by passing it as the first argument of the transaction helper. |
 | **GCS + EXIF pipeline** | One ingest function `ingestPhoto(file)` that uploads, returns the GCS path + parsed EXIF + EXIF capture timestamp. Used by reading capture **and** logo upload. |
-| **AI adapter (OpenRouter)** | `modules/ai/MeterReader.ts` interface with a `MockMeterReader` for dev and `OpenRouterMeterReader` for real use. See [`meter-reading-pipeline.md`](./meter-reading-pipeline.md). |
+| **AI adapter (OpenRouter)** | `hidrosync-service/modules/ai/MeterReader.ts` interface with a `MockMeterReader` for dev and `OpenRouterMeterReader` for real use. See [`meter-reading-pipeline.md`](./meter-reading-pipeline.md). |
 | **Polymorphic scope view** | A SQL view `meter_scope_resolved` that flattens `(meter, target_kind, target_id)` rows from `linked_meters` into the actual unit set each meter covers. Used everywhere consumption is computed. See [`architecture-decisions.md`](./architecture-decisions.md#45-polymorphic-linked_meters--resolved-via-a-sql-view). |
-| **Zod schemas** | Per entity, in `lib/validation/`. Reused by API route handlers and React Hook Form. |
+| **Zod schemas** | Per entity, in `hidrosync-service/lib/validation/`. Reused by API route handlers and React Hook Form. |
 | **Test harness** | Playwright config + `tests/e2e/fixtures` that boots a condo via the seed script. Each milestone adds one happy-path e2e test. |
 
 ---
@@ -112,10 +123,11 @@ Ten milestones, each a 1–3 day vertical slice that ends in a working URL. Stri
 
 The single initial PR that everything else builds on.
 
-- Next.js 14 + TS + Tailwind + shadcn baseline (some of this exists in `reference-code/`).
-- Drizzle wired up + the **full schema from `hidrosync_workflow.md §Data Model`** as the initial migration. Tempting to do incrementally, but the tables are tightly coupled (FKs everywhere) and the shape is already fully specified.
+- Next.js 14 + TS + Tailwind + shadcn baseline (some of this exists in `reference-code/option-service/`).
+- Monorepo workspace wiring: `packages/db` (patterned on `reference-code/packages/db`) + `hidrosync-service` depending on it.
+- Drizzle in `packages/db`: **full schema from `hidrosync_workflow.md §Data Model`** as the initial migration. Tempting to do incrementally, but the tables are tightly coupled (FKs everywhere) and the shape is already fully specified.
 - NextAuth (Google + credentials) + a `users` row on first login.
-- `modules/rbac` with `user_condo_grants` and `user_unit_grants` working end-to-end against a seeded admin.
+- `hidrosync-service/modules/rbac` with `user_condo_grants` and `user_unit_grants` working end-to-end against a seeded admin.
 - Audit log writer, GCS helper, EXIF parser, AI adapter interface (with mock).
 - The `meter_scope_resolved` SQL view.
 - Playwright config + one smoke test (login + see admin home).
@@ -142,7 +154,7 @@ The single initial PR that everything else builds on.
 
 ### M3 — Period state machine + scheduler *(§3)*
 
-- `periods` table + transitions enforced in `modules/periods/transitions.ts`.
+- `periods` table + transitions enforced in `hidrosync-service/modules/periods/transitions.ts`.
 - Cron endpoint `/api/scheduler/tick` invoked daily by Cloud Scheduler.
 - Per-condo `condo_config` honored for reading day / window / billing day.
 - Notifications stubbed (log lines; real email/push later).
