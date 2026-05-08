@@ -4,18 +4,25 @@
 /node_modules
 /.pnp
 .pnp.js
+packages/**/node_modules
 
 reference-code/
 hidrosync-service/node_modules
 
 # testing
 /coverage
+hidrosync-service/playwright-report/
+hidrosync-service/test-results/
 
 # next.js
 /.next/
 /out/
 hidrosync-service/.next/
 hidrosync-service/out/
+
+# turbo / build
+.turbo/
+packages/db/dist/
 
 # production
 /build

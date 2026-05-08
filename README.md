@@ -69,7 +69,7 @@ Single Cloud SQL Postgres instance per environment (dev / prod), with one logica
 ### Prerequisites
 
 - Node.js (latest LTS recommended, e.g. 20.x or 22.x)
-- npm (latest stable)
+- [pnpm](https://pnpm.io/) 9.x (see root `packageManager` in [`package.json`](./package.json))
 - PostgreSQL database (`hidrosync_service`)
 - Google Cloud credentials (for GCS media uploads in development: `gcloud auth application-default login`)
 
@@ -79,73 +79,77 @@ Single Cloud SQL Postgres instance per environment (dev / prod), with one logica
 
 ```bash
 git clone <repository-url>
-cd hidrosync-service
+cd hidrosync
 ```
 
-2. Install dependencies:
+2. Install dependencies (monorepo workspace):
 
 ```bash
-cd hidrosync-service
-npm install
+pnpm install
 ```
 
-3. Set up environment variables:
+3. Set up environment variables for the app:
 
 ```bash
-cp env.example .env
-# Edit .env with your database credentials and configuration
+cp hidrosync-service/env.example hidrosync-service/.env
+# Also copy or symlink DATABASE_URL to the repo root `.env` if you run migrations from root
 ```
 
-4. Set up the database (run migrations):
+4. Set up the database (run migrations from [`packages/db`](./packages/db)):
 
 ```bash
-npm run db:migrate
+pnpm run db:migrate
 ```
 
-5. Seed a development admin user (optional):
+5. Seed a development system admin (interactive):
 
 ```bash
-npm run create-admin
+pnpm --filter hidrosync-service run create-admin
 ```
 
 6. Run the development server:
 
 ```bash
-npm run dev
+pnpm --filter hidrosync-service run dev
+# or from repo root:
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Available Scripts
 
-- `npm run dev` — Start development server
-- `npm run build` — Build for production
-- `npm run start` — Start production server
-- `npm run lint` — Run ESLint
-- `npm run test` — Run unit tests
-- `npm run test:e2e` — Run Playwright e2e tests
-- `npm run db:generate` — Generate a new Drizzle migration from schema changes
-- `npm run db:migrate` — Apply pending migrations
-- `npm run db:studio` — Open Drizzle Studio against the local DB
-- `npm run create-admin` — Create a System admin user
-- `npm run seed:dev` — Load a small dev fixture (one condo, a few units, a sysadmin)
+Root (`pnpm` from repo root):
+
+- `pnpm dev` — Start dev tasks via Turborepo (main app)
+- `pnpm build` — Build all packages/apps
+- `pnpm lint` — Lint via Turborepo
+- `pnpm run db:generate` — Generate a Drizzle migration in `packages/db`
+- `pnpm run db:migrate` — Apply migrations
+- `pnpm run db:check` — Check migration drift
+
+`hidrosync-service`:
+
+- `pnpm --filter hidrosync-service run dev` — Next.js dev server
+- `pnpm --filter hidrosync-service run build` — Production build
+- `pnpm --filter hidrosync-service run start` — Start production server
+- `pnpm --filter hidrosync-service run lint` — ESLint
+- `pnpm --filter hidrosync-service run create-admin` — Create/update a `system_admin` user (interactive)
 
 ## Project Structure
 
 ```plaintext
 hidrosync/
+├── packages/
+│   └── db/                       # Workspace package: Drizzle schema + migrations (@hidrosync/db)
 ├── hidrosync-service/            # Main Next.js app (App Router)
 │   ├── app/                      # Routes (route groups: (marketing), (app), api)
-│   ├── components/               # React components (ui/, qr/, reading/, …)
+│   ├── components/               # React components (ui/, layout/, …)
 │   ├── modules/                  # Server-side domain logic per bounded context
-│   ├── lib/                      # Generic utilities (db/drizzle, gcs, exif, csv)
-│   ├── drizzle/                  # Generated SQL migrations + drizzle config
-│   ├── scripts/                  # setup, create-admin, seed-dev
-│   ├── tests/                    # unit/ and e2e/ (Playwright)
-│   ├── docs/                     # App-specific documentation
+│   ├── lib/                      # App utilities (auth, validation, …)
+│   ├── scripts/                  # create-admin, …
+│   ├── tests/                    # unit/ and e2e/ (Playwright) — coming in M0b
 │   ├── public/                   # Static assets
-│   ├── Dockerfile                # Multi-stage Docker build
-│   ├── cloudbuild.yaml           # Cloud Build pipeline
 │   └── env.example               # Environment variable template
 ├── redirect-service/             # www → apex redirect service (phase 2)
 ├── docs/                         # Cross-cutting planning docs

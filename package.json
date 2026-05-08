@@ -1,0 +1,21 @@
+{
+  "name": "hidrosync-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:generate": "pnpm --filter @hidrosync/db run generate",
+    "db:migrate": "pnpm --filter @hidrosync/db run migrate:db",
+    "db:check": "pnpm --filter @hidrosync/db run check",
+    "create-superadmin": "node scripts/create-superadmin.js"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  },
+  "engines": {
+    "node": ">=20.9.0",
+    "pnpm": ">=9.15.0"
+  },
+  "packageManager": "pnpm@9.15.4"
+}

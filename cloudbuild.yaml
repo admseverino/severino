@@ -1,0 +1,60 @@
+# HidroSync — database migrate, schema check, then bootstrap superadmin.
+#
+# Set substitutions on the trigger (Secret Manager recommended for passwords):
+#   _INSTANCE_CONNECTION_NAME — Cloud SQL instance (project:region:instance)
+#   _DB_USER, _DB_PASS — Postgres user/password
+#   _DB_NAME — database name (e.g. hidrosync)
+#   _SUPERADMIN_USER — email for system_admin (exported as superadminuser)
+#   _SUPERADMIN_PASS — password (exported as superadminpass)
+#
+# IAM: Cloud Build service account needs roles/cloudsql.client.
+#
+# Root `.env` is not used in CI; DATABASE_URL is built from substitutions below.
+
+substitutions:
+  _CLOUD_SQL_PROXY_VERSION: 'v2.18.3'
+
+steps:
+  - id: install
+    name: node:22-bookworm
+    dir: .
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        corepack enable
+        corepack prepare pnpm@9.15.4 --activate
+        pnpm install --frozen-lockfile
+
+  - id: db-release
+    name: node:22-bookworm
+    dir: .
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        set -euo pipefail
+
+        curl -fsSL -o cloud-sql-proxy "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/${_CLOUD_SQL_PROXY_VERSION}/cloud-sql-proxy.linux.amd64"
+        chmod +x cloud-sql-proxy
+        ./cloud-sql-proxy --address 127.0.0.1 --port 5432 "${_INSTANCE_CONNECTION_NAME}" &
+        PROXY_PID=$!
+        trap 'kill ${PROXY_PID}' EXIT
+        sleep 3
+
+        export DATABASE_URL="postgresql://${_DB_USER}:${_DB_PASS}@127.0.0.1:5432/${_DB_NAME}"
+
+        corepack enable
+        corepack prepare pnpm@9.15.4 --activate
+
+        pnpm --filter @hidrosync/db run build
+
+        pnpm run db:migrate
+        pnpm run db:check
+
+        export superadminuser="${_SUPERADMIN_USER}"
+        export superadminpass="${_SUPERADMIN_PASS}"
+        node scripts/create-superadmin.js
+
+options:
+  logging: CLOUD_LOGGING_ONLY

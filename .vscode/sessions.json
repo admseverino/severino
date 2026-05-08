@@ -29,15 +29,15 @@
             ],
             [
                 {
-                    "name": "option-service",
+                    "name": "hidrosync-service",
                     "autoExecuteCommands": false,
                     "icon": "home",
                     "commands": [
-                        "pnpm --filter option-service run dev"
+                        "pnpm --filter hidrosync-service run dev"
                     ]
                 },
                 {
-                    "name": "dash-service",
+                    "name": "admin-service",
                     "autoExecuteCommands": false,
                     "icon": "server",
                     "commands": [
@@ -47,29 +47,29 @@
             ],
             [
                 {
-                    "name": "scraping-function",
+                    "name": "update-meter-function",
                     "autoExecuteCommands": false,
                     "icon": "gear",
                     "commands": [
-                        "pnpm --filter scraping-function run dev"
+                        "pnpm --filter update-meter-function run dev"
                     ]
                 },
                 {
-                    "name": "surface-sync-function",
+                    "name": "close-period-function",
                     "autoExecuteCommands": false,
                     "icon": "gear",
                     "commands": [
-                        "pnpm --filter surface-sync-function run dev"
+                        "pnpm --filter close-period-function run dev"
                     ]
                 }
             ],
             [
                 {
-                    "name": "scraping-job",
+                    "name": "job",
                     "autoExecuteCommands": false,
                     "icon": "zap",
                     "commands": [
-                        "pnpm --filter scraping-job scrape:dev"
+                        "pnpm --filter job job:dev"
                     ]
                 }
             ],
