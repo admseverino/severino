@@ -2,10 +2,6 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
 import { authOptions } from '@/lib/auth'
-import { Footer } from '@/components/layout/Footer'
-import { Header } from '@/components/layout/Header'
-import { NavigationMenu } from '@/components/layout/NavigationMenu'
-
 export default async function AppShellLayout({
   children,
 }: {
@@ -19,14 +15,5 @@ export default async function AppShellLayout({
     redirect('/?login=1')
   }
 
-  const showGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header showGoogle={showGoogle} />
-      <NavigationMenu />
-      <main className="flex-1 container py-8">{children}</main>
-      <Footer />
-    </div>
-  )
+  return <main className="flex-1 container py-8">{children}</main>
 }

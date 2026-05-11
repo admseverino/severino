@@ -3,6 +3,9 @@ import { Chivo } from 'next/font/google'
 import { getServerSession } from 'next-auth'
 
 import './globals.css'
+import { Footer } from '@/components/layout/Footer'
+import { Header } from '@/components/layout/Header'
+import { NavigationMenu } from '@/components/layout/NavigationMenu'
 import { authOptions } from '@/lib/auth'
 import { ClientSessionProvider } from '@/components/providers/session-provider'
 
@@ -34,6 +37,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }): Promise<React.JSX.Element> {
   const session = await getServerSession(authOptions)
+  const showGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
 
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`light ${chivo.variable}`}>
@@ -43,7 +47,14 @@ export default async function RootLayout({
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body className="font-sans antialiased">
-        <ClientSessionProvider session={session}>{children}</ClientSessionProvider>
+        <ClientSessionProvider session={session}>
+          <div className="min-h-screen bg-background flex flex-col">
+            <Header showGoogle={showGoogle} />
+            <NavigationMenu />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </div>
+        </ClientSessionProvider>
       </body>
     </html>
   )
