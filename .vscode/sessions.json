@@ -3,7 +3,6 @@
     "theme": "tribe",
     "active": "default",
     "activateOnStartup": true,
-    "noClear": false,
     "keepExistingTerminals": false,
     "sessions": {
         "default": [
@@ -11,7 +10,7 @@
                 "name": "gcloud auth",
                 "autoExecuteCommands": false,
                 "icon": "person",
-                "color": "terminal.ansiGreen",
+                "color": "terminal.ansiBlue",
                 "commands": [
                     "gcloud auth login"
                 ]
@@ -32,6 +31,7 @@
                     "name": "hidrosync-service",
                     "autoExecuteCommands": false,
                     "icon": "home",
+                    "color": "terminal.ansiGreen",
                     "commands": [
                         "pnpm --filter hidrosync-service run dev"
                     ]
@@ -75,19 +75,19 @@
             ],
             [
                 {
-                    "name": "test option-service",
+                    "name": "test  hidrosync-service",
                     "autoExecuteCommands": false,
                     "icon": "beaker",
                     "commands": [
-                        "pnpm --filter option-service run typecheck:e2e && pnpm --filter option-service run test:e2e"
+                        "pnpm --filter hidrosync-service run typecheck:e2e && pnpm --filter hidrosync-service run test:e2e"
                     ]
                 },
                 {
-                    "name": "test option-dash",
+                    "name": "test dash-service",
                     "autoExecuteCommands": false,
                     "icon": "beaker",
                     "commands": [
-                        "pnpm --filter dash-service run test:e2e"
+                        "pnpm --filter dash-service run typecheck:e2e && pnpm --filter dash-service run test:e2e"
                     ]
                 }
             ],

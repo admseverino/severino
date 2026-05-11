@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import * as repo from '@/lib/auth-repository'
 import { upsertSystemAdminUser } from '@/lib/system-admin-provisioning'
 import { registerSchema } from '@/lib/validation/auth'
+import { userForAudit, writeAudit } from '@/modules/audit/log'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,11 +51,19 @@ export async function POST(request: Request): Promise<Response> {
       })
     } else {
       const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-      await repo.createCredentialsUser({
+      const created = await repo.createCredentialsUser({
         email,
         name,
         passwordHash,
         role: 'user',
+      })
+      await writeAudit({
+        actor: created.id,
+        entity: 'user',
+        entityId: created.id,
+        action: 'user.register',
+        before: null,
+        after: userForAudit(created),
       })
     }
 

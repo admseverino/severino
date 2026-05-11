@@ -2,6 +2,7 @@ import type { Adapter, AdapterAccount, AdapterSession, AdapterUser, Verification
 
 import type { UserAccountRow } from '@/lib/auth-repository'
 import * as repo from '@/lib/auth-repository'
+import { userForAudit, writeAudit } from '@/modules/audit/log'
 
 function mapUserForAdapter(user: UserAccountRow): AdapterUser & { role: string } {
   return {
@@ -27,6 +28,15 @@ export function postgresAdapter(): Adapter {
         email: user.email!,
         emailVerified: user.emailVerified,
         image: user.image,
+      })
+
+      await writeAudit({
+        actor: dbUser.id,
+        entity: 'user',
+        entityId: dbUser.id,
+        action: 'user.oauth_create',
+        before: null,
+        after: userForAudit(dbUser),
       })
 
       return mapUserForAdapter(dbUser)
@@ -55,6 +65,11 @@ export function postgresAdapter(): Adapter {
     },
 
     async updateUser(user: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) {
+      const prior = await repo.findUserById(user.id)
+      if (!prior) {
+        throw new Error('User not found')
+      }
+
       const role = 'role' in user && typeof user.role === 'string' ? user.role : undefined
       const dbUser = await repo.updateUser(user.id, {
         ...(user.name !== undefined ? { name: user.name } : {}),
@@ -68,10 +83,30 @@ export function postgresAdapter(): Adapter {
         throw new Error('User not found')
       }
 
+      await writeAudit({
+        actor: dbUser.id,
+        entity: 'user',
+        entityId: dbUser.id,
+        action: 'user.oauth_profile_update',
+        before: userForAudit(prior),
+        after: userForAudit(dbUser),
+      })
+
       return mapUserForAdapter(dbUser)
     },
 
     async deleteUser(userId: string) {
+      const prior = await repo.findUserById(userId)
+      if (prior) {
+        await writeAudit({
+          actor: userId,
+          entity: 'user',
+          entityId: userId,
+          action: 'user.adapter_delete',
+          before: userForAudit(prior),
+          after: null,
+        })
+      }
       await repo.deleteUser(userId)
     },
 
@@ -124,6 +159,19 @@ export function postgresAdapter(): Adapter {
         scope: account.scope ?? null,
         id_token: account.id_token ?? null,
         session_state: account.session_state ?? null,
+      })
+
+      await writeAudit({
+        actor: account.userId,
+        entity: 'oauth_account',
+        entityId: dbAccount.id,
+        action: 'oauth_account.link',
+        before: null,
+        after: {
+          provider: dbAccount.provider,
+          providerAccountId: dbAccount.providerAccountId,
+          type: dbAccount.type,
+        },
       })
 
       return {

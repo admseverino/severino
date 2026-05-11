@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { authOptions } from '@/lib/auth'
 import { validateUserDelete, validateUserUpdate } from '@/lib/admin-rbac'
 import * as repo from '@/lib/auth-repository'
+import { userForAudit, writeAudit } from '@/modules/audit/log'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,6 +79,15 @@ export async function PUT(
     return NextResponse.json({ error: 'Falha ao atualizar' }, { status: 500 })
   }
 
+  await writeAudit({
+    actor: session.user.id,
+    entity: 'user',
+    entityId: updated.id,
+    action: 'user.admin_update',
+    before: userForAudit(target),
+    after: userForAudit(updated),
+  })
+
   return NextResponse.json({
     user: {
       id: updated.id,
@@ -117,6 +127,15 @@ export async function DELETE(
   if (!check.ok) {
     return NextResponse.json({ error: check.error }, { status: check.status })
   }
+
+  await writeAudit({
+    actor: session.user.id,
+    entity: 'user',
+    entityId: target.id,
+    action: 'user.admin_delete',
+    before: userForAudit(target),
+    after: null,
+  })
 
   await repo.deleteUser(target.id)
   return NextResponse.json({ ok: true })

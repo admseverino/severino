@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 
 import * as repo from '@/lib/auth-repository'
+import { userForAudit, writeAudit } from '@/modules/audit/log'
 
 const BCRYPT_ROUNDS = 12
 
@@ -24,14 +25,30 @@ export async function upsertSystemAdminUser(options: {
     if (!updated) {
       throw new Error('Failed to update system admin user')
     }
+    await writeAudit({
+      actor: updated.id,
+      entity: 'user',
+      entityId: updated.id,
+      action: 'user.system_admin_upsert',
+      before: userForAudit(existing),
+      after: userForAudit(updated),
+    })
     return 'updated'
   }
 
-  await repo.createCredentialsUser({
+  const created = await repo.createCredentialsUser({
     email: options.email,
     name: options.displayName ?? 'System Admin',
     passwordHash,
     role: 'system_admin',
+  })
+  await writeAudit({
+    actor: created.id,
+    entity: 'user',
+    entityId: created.id,
+    action: 'user.system_admin_bootstrap_create',
+    before: null,
+    after: userForAudit(created),
   })
   return 'created'
 }
