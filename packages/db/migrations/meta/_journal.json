@@ -8,6 +8,20 @@
       "when": 1778270714034,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778516160019,
+      "tag": "0001_glorious_dark_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778529155648,
+      "tag": "0002_dizzy_garia",
+      "breakpoints": true
     }
   ]
 }

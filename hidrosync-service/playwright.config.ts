@@ -9,6 +9,11 @@ loadEnvConfig(path.resolve(process.cwd()))
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3100'
 // NextAuth rejects mismatched origin; keep in sync with the Playwright base URL / dev server port.
 process.env.NEXTAUTH_URL = baseURL
+// Onboarding tests assert exact row counts → keep the deterministic mock extractor unless the
+// dev explicitly opts into the real LLM with `PLAYWRIGHT_USE_REAL_LLM=true`.
+if (!process.env.ONBOARDING_LLM_PROVIDER && process.env.PLAYWRIGHT_USE_REAL_LLM !== 'true') {
+  process.env.ONBOARDING_LLM_PROVIDER = 'mock'
+}
 const startWebServer = process.env.PLAYWRIGHT_WEB_SERVER !== 'false'
 
 export default defineConfig({

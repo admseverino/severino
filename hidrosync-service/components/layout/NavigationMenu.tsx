@@ -1,22 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
+import { getAppNavItems } from '@/components/layout/app-nav-items'
+import { isStaffRole } from '@/lib/admin-rbac'
 import { cn } from '@/lib/utils'
-
-const menuItems = [
-  { label: 'HOME', href: '/' },
-  { label: 'MEDIDORES', href: '/meters' },
-  { label: 'LEITURAS', href: '/reading' },
-  { label: 'CONSUMO', href: '/consumption' },
-  { label: 'PAGAMENTOS', href: '/billing' },
-  { label: 'CONFIGURAÇÕES', href: '/account' },
-] as const
 
 export function NavigationMenu(): React.JSX.Element {
   const pathname = usePathname()
+  const { data: session } = useSession()
+  const menuItems = useMemo(
+    () => getAppNavItems(isStaffRole(session?.user?.role)),
+    [session?.user?.role]
+  )
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
 

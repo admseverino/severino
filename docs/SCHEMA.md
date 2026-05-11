@@ -26,3 +26,5 @@
    ```
 
 For **`pnpm run db:migrate`**, set `DATABASE_URL` (and optional `DATABASE_SSL`) in the **repo root** `.env` (see root [`.env.example`](../.env.example)). The migrate script (`migrate:db`) loads only that file for connection settings. For `db:generate`, export `DATABASE_URL` or use a root `.env` if your Drizzle setup reads it.
+
+

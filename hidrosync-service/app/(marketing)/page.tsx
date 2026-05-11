@@ -12,7 +12,7 @@ export default async function MarketingHomePage(): Promise<React.JSX.Element> {
     <main className="container flex flex-col items-center justify-center gap-8 py-16 text-center">
       <div className="max-w-2xl space-y-6">
         <Image
-          src="/Assets/hidrosync_logo_name.png"
+          src="/Assets/hidrosync_logo_0.png"
           alt="HidroSync"
           width={480}
           height={160}

@@ -107,7 +107,7 @@ This is the single trickiest feature in the system, so it has its own document �
 meter_scope_resolved(meter_id, unit_id)
   -- For submeters: one row per linked unit (usually exactly one).
   -- For condo-level masters: one row per unit in the condo.
-  -- For group-level masters: one row per unit in the group.
+  -- For group-level masters: one row per unit in the group (see [4.11](#411-nested-groups-hierarchy) for how groups nest).
   -- For custom-set masters: one row per linked unit.
 ```
 
@@ -254,3 +254,20 @@ The offline-first requirement is two unrelated problems, solved separately:
   3. A 30-second interval while the tab is open
 - On supported browsers, **also** register Background Sync as belt-and-suspenders.
 - The capture API endpoint is **idempotent** (server upserts on `(meter_id, period_id, client_id)`) so re-sends from a flaky queue don't double-count.
+
+---
+
+## 4.11 Nested `groups` hierarchy
+
+**Decision:** Represent condo subdivisions as a **tree of `groups`** with optional `parent_group_id` (self-FK to `groups.id`, `ON DELETE CASCADE`). `NULL` means a **root** group. Cap **depth at four levels** counting the root, enforce that limit in the **onboarding module** when building `temp_groups` and permanent `groups` rows (not only with implicit DB constraints). Enforce **name uniqueness** with Postgres **partial unique indexes**: among roots in a condo, `(condo_id, name)` is unique where `parent_group_id IS NULL`; among siblings under the same parent, `(condo_id, parent_group_id, name)` is unique where `parent_group_id IS NOT NULL`. Apply the **same rules** to **`temp_groups`**, scoped by `session_id` (see migration `0002_*`). **`units.group_id`** remains a **single** FK to one group — typically the **leaf** group the unit belongs to.
+
+**Why:**
+
+- **Depth and naming invariants** belong in onboarding because that is where bulk structure is created; failing fast there avoids impossible trees and duplicate labels before commit.
+- **Partial unique indexes** express “unique among roots” vs “unique among siblings” without nullable-column uniqueness footguns.
+- **Parity between `temp_groups` and `groups`** keeps preview/commit idempotent and avoids session-local collisions.
+- **One `group_id` per unit** keeps unit placement simple for billing and for `meter_scope_resolved` when masters target a group.
+
+**Conventions:**
+
+- When changing group shape or validation, update Drizzle schema, migrations (indexes), onboarding builders, and this section in the same PR.

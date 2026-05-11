@@ -8,18 +8,11 @@ import { useSession } from 'next-auth/react'
 import { Menu } from 'lucide-react'
 
 import { AuthDialog } from '@/components/auth/AuthDialog'
+import { getAppNavItems } from '@/components/layout/app-nav-items'
 import { UserMenu } from '@/components/layout/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-
-const menuItems = [
-  { label: 'HOME', href: '/' },
-  { label: 'MEDIDORES', href: '/meters' },
-  { label: 'LEITURAS', href: '/reading' },
-  { label: 'CONSUMO', href: '/consumption' },
-  { label: 'PAGAMENTOS', href: '/billing' },
-  { label: 'CONFIGURAÇÕES', href: '/account' },
-] as const
+import { isStaffRole } from '@/lib/admin-rbac'
 
 interface HeaderProps {
   /** When false, mobile sheet uses only marketing links (no app nav). */
@@ -53,7 +46,12 @@ export function Header({ showFullNav = true, showGoogle }: HeaderProps): React.J
   const [isHeaderHidden, setIsHeaderHidden] = useState(false)
   const lastScrollY = useRef(0)
 
-  const mobileLinks = showFullNav ? menuItems : [{ label: 'HOME', href: '/' }]
+  const mobileLinks = useMemo(() => {
+    if (!showFullNav) {
+      return [{ label: 'HOME', href: '/' }]
+    }
+    return getAppNavItems(isStaffRole(session?.user?.role))
+  }, [showFullNav, session?.user?.role])
 
   const redirectAfterLogin = useMemo(() => {
     const fromQuery = searchParams.get('callbackUrl')
@@ -141,12 +139,13 @@ export function Header({ showFullNav = true, showGoogle }: HeaderProps): React.J
 
           <Link href="/" className="flex items-center space-x-2 ml-1 md:ml-5">
             <Image
-              src="/Assets/hidrosync_logo.png"
+              src="/Assets/HidroSync_Logo_1.svg"
               alt="HidroSync"
-              width={200}
-              height={64}
+              width={752}
+              height={752}
               className="h-14 w-auto md:h-16"
               priority
+              unoptimized
             />
           </Link>
 
@@ -202,12 +201,13 @@ export function Header({ showFullNav = true, showGoogle }: HeaderProps): React.J
       >
         <div className="liquid-glass w-[200px] h-[44px] flex items-center justify-center overflow-hidden">
           <Image
-            src="/Assets/hidrosync_logo.png"
+            src="/Assets/HidroSync_Logo_1.svg"
             alt="HidroSync"
-            width={120}
-            height={40}
+            width={752}
+            height={752}
             className="h-10 w-auto"
             priority
+            unoptimized
           />
         </div>
       </div>

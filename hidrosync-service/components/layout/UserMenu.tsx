@@ -154,14 +154,14 @@ export function UserMenu({ user }: UserMenuProps): React.JSX.Element {
         type="button"
         className={cn(
           buttonVariants({ variant: 'ghost', size: 'icon' }),
-          'flex size-8 shrink-0 items-center justify-center rounded-full border border-gray-300 p-0'
+          'flex size-[2.4rem] shrink-0 items-center justify-center rounded-full border border-gray-300 p-0'
         )}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="Menu da conta"
       >
-        <Avatar className="size-7">
+        <Avatar className="size-[2.1rem]">
           <AvatarImage src={user?.image || undefined} alt={user?.name || 'Usuário'} className="object-cover" />
           <AvatarFallback className="text-xs font-semibold text-hidrostone">
             {getInitials(user?.name, user?.email)}

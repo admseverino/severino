@@ -1,0 +1,15 @@
+import { Loader2 } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
+
+function Spinner({ className, ...props }: React.ComponentProps<'svg'>): React.JSX.Element {
+  return (
+    <Loader2
+      aria-hidden
+      className={cn('size-4 animate-spin', className)}
+      {...props}
+    />
+  )
+}
+
+export { Spinner }
