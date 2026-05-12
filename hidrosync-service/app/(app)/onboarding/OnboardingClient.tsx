@@ -262,7 +262,7 @@ function FormView({
       <CardHeader>
         <CardTitle>Texto descritivo</CardTitle>
         <CardDescription>
-          Use frases curtas. Reconhecemos andares, torres, unidades por andar e medidores principais(masters) por andar/torre/condomínio.
+          Use frases curtas. Reconhecemos andares, torres, unidades por andar e medidores principais (masters) por andar/torre/condomínio.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -275,7 +275,7 @@ function FormView({
                 data-testid="onb-name"
                 value={form.condoName}
                 onChange={(e) => setForm((s) => ({ ...s, condoName: e.target.value }))}
-                placeholder="Edifício Aurora"
+                placeholder="Condomínio Aurora"
                 disabled={submitting === 'preview'}
                 required
               />
@@ -290,7 +290,7 @@ function FormView({
                   setSlugTouched(true)
                   setForm((s) => ({ ...s, condoSlug: e.target.value }))
                 }}
-                placeholder="edificio-aurora"
+                placeholder="condominio-aurora"
                 disabled={submitting === 'preview'}
               />
               <p className="text-xs text-muted-foreground">
