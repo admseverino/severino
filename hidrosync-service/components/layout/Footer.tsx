@@ -1,8 +1,15 @@
 import Link from 'next/link'
 
-export function Footer(): React.JSX.Element {
+import { cn } from '@/lib/utils'
+
+export function Footer({ fixed = false }: { fixed?: boolean }): React.JSX.Element {
   return (
-    <footer className="w-full mt-auto relative z-50">
+    <footer
+      className={cn(
+        'w-full max-w-full',
+        fixed ? 'fixed bottom-0 left-0 right-0 z-40' : 'relative z-10 mt-auto'
+      )}
+    >
       <div className="bg-black py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 px-4">
         <p className="text-gray-400 text-center font-normal text-[10px] md:text-xs">
           © {new Date().getFullYear()} HidroSync. Todos os direitos reservados.

@@ -3,9 +3,7 @@ import { Chivo } from 'next/font/google'
 import { getServerSession } from 'next-auth'
 
 import './globals.css'
-import { Footer } from '@/components/layout/Footer'
-import { Header } from '@/components/layout/Header'
-import { NavigationMenu } from '@/components/layout/NavigationMenu'
+import { AppChrome } from '@/components/layout/AppChrome'
 import { authOptions } from '@/lib/auth'
 import { ClientSessionProvider } from '@/components/providers/session-provider'
 
@@ -48,12 +46,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ClientSessionProvider session={session}>
-          <div className="min-h-screen bg-background flex flex-col">
-            <Header showGoogle={showGoogle} />
-            <NavigationMenu />
-            <div className="flex-1">{children}</div>
-            <Footer />
-          </div>
+          <AppChrome showGoogle={showGoogle}>{children}</AppChrome>
         </ClientSessionProvider>
       </body>
     </html>

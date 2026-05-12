@@ -18,6 +18,7 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 })
@@ -71,7 +72,7 @@ export function UserMenu({ user }: UserMenuProps): React.JSX.Element {
 
     const handleClickOutside = (event: MouseEvent): void => {
       const target = event.target as Node
-      if (buttonRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
+      if (containerRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
         return
       }
       setIsOpen(false)
@@ -93,11 +94,6 @@ export function UserMenu({ user }: UserMenuProps): React.JSX.Element {
       }}
       role="menu"
     >
-      <div className="border-b border-gray-100 px-4 py-2">
-        <p className="text-sm font-medium text-gray-900">{user?.name || 'Usuário'}</p>
-        <p className="text-xs text-gray-500">{user?.email}</p>
-      </div>
-
       <Link
         href="/account"
         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -149,25 +145,33 @@ export function UserMenu({ user }: UserMenuProps): React.JSX.Element {
 
   return (
     <>
-      <button
-        ref={buttonRef}
-        type="button"
-        className={cn(
-          buttonVariants({ variant: 'ghost', size: 'icon' }),
-          'flex size-[2.4rem] shrink-0 items-center justify-center rounded-full border border-gray-300 p-0'
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        aria-label="Menu da conta"
-      >
-        <Avatar className="size-[2.1rem]">
-          <AvatarImage src={user?.image || undefined} alt={user?.name || 'Usuário'} className="object-cover" />
-          <AvatarFallback className="text-xs font-semibold text-hidrostone">
-            {getInitials(user?.name, user?.email)}
-          </AvatarFallback>
-        </Avatar>
-      </button>
+      <div ref={containerRef} className="flex min-w-0 max-w-full items-center justify-end gap-2 sm:gap-3">
+        <div className="min-w-0 max-w-[42vw] text-right sm:max-w-[200px] md:max-w-[260px]">
+          <p className="truncate text-sm font-semibold leading-tight text-foreground">
+            {user?.name || 'Usuário'}
+          </p>
+          <p className="truncate text-xs leading-tight text-muted-foreground">{user?.email}</p>
+        </div>
+        <button
+          ref={buttonRef}
+          type="button"
+          className={cn(
+            buttonVariants({ variant: 'ghost', size: 'icon' }),
+            'flex size-[2.4rem] shrink-0 items-center justify-center rounded-full border border-gray-300 p-0'
+          )}
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-haspopup="menu"
+          aria-label="Menu da conta"
+        >
+          <Avatar className="size-[2.1rem]">
+            <AvatarImage src={user?.image || undefined} alt={user?.name || 'Usuário'} className="object-cover" />
+            <AvatarFallback className="text-xs font-semibold text-hidrostone">
+              {getInitials(user?.name, user?.email)}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </div>
 
       {typeof window !== 'undefined' && isOpen ? createPortal(dropdownContent, document.body) : null}
     </>
