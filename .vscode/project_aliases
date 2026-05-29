@@ -1,7 +1,7 @@
 # .project_aliases
 # 
 # Service	              Command to Run                      Example
-# Frontend	              deployfront [major|minor|patch]     deployfront patch
+# Service	              deployservice [major|minor|patch]   deployservice patch
 # Dashboard	              deploydash [major|minor|patch]      deploydash minor
 # Webhook	              deploywebhook [major|minor|patch]   deploywebhook patch
 # Database	              deploydatabase [major|minor|patch]  deploydatabase patch
@@ -66,11 +66,11 @@ function create_and_push_tag() {
 }
 
 # Deployment commands (functions work in bash and zsh; pass bump type as 2nd arg)
-deployfront() { create_and_push_tag front "$@"; }
+deployservice() { create_and_push_tag service "$@"; }
 deploydash() { create_and_push_tag dash "$@"; }
 deploywebhook() { create_and_push_tag webhook "$@"; }
 deploydatabase() { create_and_push_tag database "$@"; }
 
 if [ -n "${BASH_VERSION:-}" ]; then
-    export -f create_and_push_tag deployfront deploydash deploywebhook deploydatabase
+    export -f create_and_push_tag deployservice deploydash deploywebhook deploydatabase
 fi

@@ -14,8 +14,23 @@
 
 substitutions:
   _CLOUD_SQL_PROXY_VERSION: 'v2.18.3'
+  _PNPM_CACHE_OBJECT: cache/pnpm-store.tar.gz
 
 steps:
+  - id: restore-cache
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    dir: .
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        CACHE_URI="gs://${PROJECT_ID}_cloudbuild/${_PNPM_CACHE_OBJECT}"
+        if gcloud storage objects describe "$CACHE_URI" --project="$PROJECT_ID" >/dev/null 2>&1; then
+          gcloud storage cp "$CACHE_URI" /tmp/pnpm-store.tar.gz
+          mkdir -p .pnpm-store
+          tar -xzf /tmp/pnpm-store.tar.gz -C .
+        fi
+
   - id: install
     name: node:22-bookworm
     dir: .
@@ -25,6 +40,7 @@ steps:
       - |
         corepack enable
         corepack prepare pnpm@11.5.0 --activate
+        pnpm config set store-dir /workspace/.pnpm-store
         pnpm install --frozen-lockfile
 
   - id: db-release
@@ -47,11 +63,25 @@ steps:
 
         corepack enable
         corepack prepare pnpm@11.5.0 --activate
+        pnpm config set store-dir /workspace/.pnpm-store
 
         pnpm --filter @severino/db run build
 
         pnpm run db:migrate
         pnpm run db:check
+
+  - id: save-cache
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    dir: .
+    waitFor: ['db-release']
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        if [ -d .pnpm-store ] && [ "$(ls -A .pnpm-store 2>/dev/null)" ]; then
+          tar -czf /tmp/pnpm-store.tar.gz .pnpm-store
+          gcloud storage cp /tmp/pnpm-store.tar.gz "gs://${PROJECT_ID}_cloudbuild/${_PNPM_CACHE_OBJECT}" --project="$PROJECT_ID"
+        fi
 
 options:
   logging: CLOUD_LOGGING_ONLY
