@@ -21,20 +21,6 @@ export class DrizzleEventStore implements EventStore {
     return asEventId(row.id)
   }
 
-  async insertWithId(eventId: EventId, input: RawEventInput): Promise<EventId> {
-    await db()
-      .insert(schema.whatsappEvents)
-      .values({
-        id: eventId,
-        signature: input.signature,
-        payload: input.payload,
-        rawBody: input.rawBody,
-      })
-      .onConflictDoNothing()
-
-    return eventId
-  }
-
   async loadById(eventId: EventId): Promise<StoredWebhookEvent | null> {
     const rows = await db()
       .select({

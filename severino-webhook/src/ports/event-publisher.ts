@@ -1,5 +1,5 @@
-import type { PublishedEvent } from './published-event.js'
+import type { EventId } from '../whatsapp/types.js'
 
 export interface EventPublisher {
-  publish(event: PublishedEvent): Promise<void>
+  publish(eventId: EventId): Promise<void>
 }

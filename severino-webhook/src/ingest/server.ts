@@ -82,12 +82,7 @@ export function createIngestRouter(env: IngestEnv): Router {
       })
 
       try {
-        await publisher.publish({
-          eventId,
-          signature: signature ?? null,
-          payload,
-          rawBody: rawBody.toString('utf8'),
-        })
+        await publisher.publish(eventId)
       } catch (publishError) {
         log.error('failed to publish event; row persisted for reconciliation', {
           eventId,
