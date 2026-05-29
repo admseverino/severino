@@ -1,0 +1,135 @@
+{
+    "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v11/terminal-keeper.json",
+    "theme": "tribe",
+    "active": "default",
+    "activateOnStartup": true,
+    "keepExistingTerminals": false,
+    "sessions": {
+        "default": [
+            {
+                "name": "gcloud auth",
+                "autoExecuteCommands": false,
+                "icon": "person",
+                "color": "terminal.ansiBlue",
+                "commands": [
+                    "gcloud auth login"
+                ]
+            },
+            [
+                {
+                    "name": "all-services (turbo)",
+                    "autoExecuteCommands": false,
+                    "icon": "play-circle",
+                    "color": "terminal.ansiCyan",
+                    "commands": [
+                        "pnpm run dev --continue"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "hidrosync-service",
+                    "autoExecuteCommands": false,
+                    "icon": "home",
+                    "color": "terminal.ansiGreen",
+                    "commands": [
+                        "pnpm --filter hidrosync-service run dev"
+                    ]
+                },
+                {
+                    "name": "admin-service",
+                    "autoExecuteCommands": false,
+                    "icon": "server",
+                    "commands": [
+                        "pnpm --filter dash-service run dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "update-meter-function",
+                    "autoExecuteCommands": false,
+                    "icon": "gear",
+                    "commands": [
+                        "pnpm --filter update-meter-function run dev"
+                    ]
+                },
+                {
+                    "name": "close-period-function",
+                    "autoExecuteCommands": false,
+                    "icon": "gear",
+                    "commands": [
+                        "pnpm --filter close-period-function run dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "severino-webhook (worker)",
+                    "autoExecuteCommands": false,
+                    "icon": "comment-discussion",
+                    "color": "terminal.ansiMagenta",
+                    "commands": [
+                        "pnpm --filter severino-webhook run dev:worker"
+                    ]
+                },
+                {
+                    "name": "severino-webhook (ingest)",
+                    "autoExecuteCommands": false,
+                    "icon": "comment-discussion",
+                    "color": "terminal.ansiMagenta",
+                    "commands": [
+                        "pnpm --filter severino-webhook run dev:ingest"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "job",
+                    "autoExecuteCommands": false,
+                    "icon": "zap",
+                    "commands": [
+                        "pnpm --filter job job:dev"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "test  hidrosync-service",
+                    "autoExecuteCommands": false,
+                    "icon": "beaker",
+                    "commands": [
+                        "pnpm --filter hidrosync-service run typecheck:e2e && pnpm --filter hidrosync-service run test:e2e"
+                    ]
+                },
+                {
+                    "name": "test dash-service",
+                    "autoExecuteCommands": false,
+                    "icon": "beaker",
+                    "commands": [
+                        "pnpm --filter dash-service run typecheck:e2e && pnpm --filter dash-service run test:e2e"
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "git",
+                    "icon": "git-commit",
+                    "autoExecuteCommands": false,
+                    "commands": [
+                        "git "
+                    ]
+                }
+            ]
+        ],
+        "saved-session": [
+            {
+                "name": "connect",
+                "autoExecuteCommands": false,
+                "commands": [
+                    ""
+                ]
+            }
+        ]
+    }
+}
