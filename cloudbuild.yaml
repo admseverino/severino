@@ -24,7 +24,7 @@ steps:
       - -ce
       - |
         corepack enable
-        corepack prepare pnpm@9.15.4 --activate
+        corepack prepare pnpm@11.5.0 --activate
         pnpm install --frozen-lockfile
 
   - id: db-release
@@ -46,7 +46,7 @@ steps:
         export DATABASE_URL="postgresql://${_DB_USER}:${_DB_PASS}@127.0.0.1:5432/${_DB_NAME}"
 
         corepack enable
-        corepack prepare pnpm@9.15.4 --activate
+        corepack prepare pnpm@11.5.0 --activate
 
         pnpm --filter @severino/db run build
 

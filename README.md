@@ -69,8 +69,8 @@ Single Cloud SQL Postgres instance per environment (dev / prod), with one logica
 
 ### Prerequisites
 
-- Node.js (latest LTS recommended, e.g. 20.x or 22.x)
-- [pnpm](https://pnpm.io/) 9.x (see root `packageManager` in [`package.json`](./package.json))
+- Node.js 22+ (see root `engines` in [`package.json`](./package.json))
+- [pnpm](https://pnpm.io/) 11.x (see root `packageManager` in [`package.json`](./package.json))
 - PostgreSQL database (`hidrosync-service`)
 - Google Cloud credentials (for GCS media uploads in development: `gcloud auth application-default login`)
 

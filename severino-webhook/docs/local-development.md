@@ -15,7 +15,7 @@ Quick start: copy [`env.example`](../env.example) to `severino-webhook/.env`, en
 
 ## Prerequisites
 
-Same as the monorepo ([`README.md`](../../README.md)): Node 20/22, `pnpm` 9.x, a local Postgres.
+Same as the monorepo ([`README.md`](../../README.md)): Node 22+, `pnpm` 11.x, a local Postgres.
 Install once from the repo root:
 
 ```bash

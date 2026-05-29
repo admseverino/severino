@@ -2,3 +2,13 @@ packages:
   - "packages/*"
   - "severino-service"
   - "severino-webhook"
+
+# Improve compatibility with Next.js / Turbopack in a workspace.
+shamefullyHoist: true
+strictPeerDependencies: false
+
+allowBuilds:
+  esbuild: true
+  "@swc/core": true
+  sharp: true
+  unrs-resolver: true
