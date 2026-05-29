@@ -76,10 +76,10 @@ steps:
         gcloud run deploy "${_WORKER_SERVICE}" \
           --project "$PROJECT_ID" \
           --region "${_REGION}" \
-          --image "$IMAGE" \
+          --image "$$IMAGE" \
           --platform managed \
           --no-allow-unauthenticated \
-          --service-account "$SA" \
+          --service-account "$$SA" \
           --add-cloudsql-instances "${_INSTANCE_CONNECTION_NAME}" \
           --concurrency 10 \
           --min-instances 0 \
@@ -87,7 +87,7 @@ steps:
           --cpu 1 \
           --memory 512Mi \
           --port 8080 \
-          --set-env-vars "SERVICE_ROLE=worker,NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,${DB_ENV}"
+          --set-env-vars "SERVICE_ROLE=worker,NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,$${DB_ENV}"
 
         WORKER_URL="$(gcloud run services describe "${_WORKER_SERVICE}" \
           --project "$PROJECT_ID" \
@@ -97,9 +97,9 @@ steps:
         gcloud run services update "${_WORKER_SERVICE}" \
           --project "$PROJECT_ID" \
           --region "${_REGION}" \
-          --update-env-vars "PUBSUB_PUSH_AUDIENCE=${WORKER_URL}"
+          --update-env-vars "PUBSUB_PUSH_AUDIENCE=$${WORKER_URL}"
 
-        echo "$WORKER_URL" > /workspace/worker_url.txt
+        echo "$$WORKER_URL" > /workspace/worker_url.txt
 
   - id: wire-pubsub
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
@@ -114,7 +114,7 @@ steps:
         gcloud run services add-iam-policy-binding "${_WORKER_SERVICE}" \
           --project "$PROJECT_ID" \
           --region "${_REGION}" \
-          --member="serviceAccount:${SA}" \
+          --member="serviceAccount:$${SA}" \
           --role=roles/run.invoker \
           --quiet 2>/dev/null || true
 
@@ -124,16 +124,16 @@ steps:
         if gcloud pubsub subscriptions describe "${_PUBSUB_SUBSCRIPTION}" --project "$PROJECT_ID" >/dev/null 2>&1; then
           gcloud pubsub subscriptions update "${_PUBSUB_SUBSCRIPTION}" \
             --project "$PROJECT_ID" \
-            --push-endpoint "${WORKER_URL}/pubsub/push" \
-            --push-auth-service-account "$SA" \
-            --push-auth-token-audience "${WORKER_URL}"
+            --push-endpoint "$${WORKER_URL}/pubsub/push" \
+            --push-auth-service-account "$$SA" \
+            --push-auth-token-audience "$${WORKER_URL}"
         else
           gcloud pubsub subscriptions create "${_PUBSUB_SUBSCRIPTION}" \
             --project "$PROJECT_ID" \
             --topic "${_PUBSUB_TOPIC}" \
-            --push-endpoint "${WORKER_URL}/pubsub/push" \
-            --push-auth-service-account "$SA" \
-            --push-auth-token-audience "${WORKER_URL}" \
+            --push-endpoint "$${WORKER_URL}/pubsub/push" \
+            --push-auth-service-account "$$SA" \
+            --push-auth-token-audience "$${WORKER_URL}" \
             --dead-letter-topic "${_PUBSUB_DLQ_TOPIC}" \
             --max-delivery-attempts 10 \
             --ack-deadline 30
@@ -154,17 +154,17 @@ steps:
         gcloud run deploy "${_INGEST_SERVICE}" \
           --project "$PROJECT_ID" \
           --region "${_REGION}" \
-          --image "$IMAGE" \
+          --image "$$IMAGE" \
           --platform managed \
           --allow-unauthenticated \
-          --service-account "$SA" \
+          --service-account "$$SA" \
           --concurrency 80 \
           --min-instances 0 \
           --max-instances 20 \
           --cpu 1 \
           --memory 512Mi \
           --port 8080 \
-          --set-env-vars "SERVICE_ROLE=ingest,NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,PUBSUB_TOPIC=${_PUBSUB_TOPIC},PUBLISHER_MODE=pubsub,${DB_ENV}" \
+          --set-env-vars "SERVICE_ROLE=ingest,NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,PUBSUB_TOPIC=${_PUBSUB_TOPIC},PUBLISHER_MODE=pubsub,$${DB_ENV}" \
           --set-secrets "WHATSAPP_APP_SECRET=${_SECRET_WHATSAPP_APP_SECRET}:latest,WHATSAPP_VERIFY_TOKEN=${_SECRET_WHATSAPP_VERIFY_TOKEN}:latest" \
           --add-cloudsql-instances "${_INSTANCE_CONNECTION_NAME}"
 
