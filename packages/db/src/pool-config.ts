@@ -30,11 +30,39 @@ function sslForUrl(connectionString: string): boolean | { rejectUnauthorized: fa
   return isProduction ? { rejectUnauthorized: false } : false
 }
 
-export function getPoolConfig(): PoolConfig {
-  const conn = process.env.DATABASE_URL?.trim()
-  if (!conn) {
-    throw new Error('DATABASE_URL is not set')
+/**
+ * Build a Cloud SQL unix-socket URL from env vars (Cloud Run / GCP).
+ * Used when DATABASE_URL is not set — local dev keeps using DATABASE_URL directly.
+ */
+export function databaseUrlFromCloudSqlEnv(): string | null {
+  const instance = process.env.INSTANCE_CONNECTION_NAME?.trim()
+  const user = process.env.DB_USER?.trim()
+  const pass = process.env.DB_PASS?.trim()
+  const name = process.env.DB_NAME?.trim()
+  if (!instance || !user || !pass || !name) {
+    return null
   }
+  const encodedUser = encodeURIComponent(user)
+  const encodedPass = encodeURIComponent(pass)
+  return `postgresql://${encodedUser}:${encodedPass}@/${name}?host=/cloudsql/${instance}`
+}
+
+export function resolveDatabaseUrl(): string {
+  const direct = process.env.DATABASE_URL?.trim()
+  if (direct) {
+    return direct
+  }
+  const fromCloudSql = databaseUrlFromCloudSqlEnv()
+  if (fromCloudSql) {
+    return fromCloudSql
+  }
+  throw new Error(
+    'Database connection not configured: set DATABASE_URL or INSTANCE_CONNECTION_NAME, DB_USER, DB_PASS, and DB_NAME'
+  )
+}
+
+export function getPoolConfig(): PoolConfig {
+  const conn = resolveDatabaseUrl()
   return {
     connectionString: conn,
     ...poolTiming,

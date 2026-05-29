@@ -60,8 +60,11 @@ Zod-validated env in [`type-safety.md`](./type-safety.md):
 | `WHATSAPP_WABA_ID` | env | both (context) |
 | `PUBSUB_TOPIC` | env (`whatsapp-events`) | ingest |
 | `PUBSUB_PUSH_AUDIENCE` | env (worker URL) | worker (OIDC verify) |
-| `DATABASE_URL` | Secret Manager (or built from parts) | worker (via `@severino/db`) |
-| `DATABASE_SSL` | env | worker |
+| `INSTANCE_CONNECTION_NAME` | trigger substitution `_INSTANCE_CONNECTION_NAME` | ingest + worker |
+| `DB_USER` | trigger substitution `_DB_USER` | ingest + worker |
+| `DB_PASS` | trigger substitution `_DB_PASS` | ingest + worker |
+| `DB_NAME` | trigger substitution `_DB_NAME` | ingest + worker |
+| `DATABASE_SSL` | env (optional) | rarely needed with Cloud SQL socket |
 | `SERVICE_ROLE` | env (`ingest` \| `worker`) | selects entrypoint |
 
 ## Dockerfile (shape)
@@ -124,8 +127,9 @@ gcloud run deploy severino-webhook-ingest \
   --min-instances 1 \                 # no cold start on the first burst
   --max-instances 20 \
   --cpu 1 --memory 512Mi \
-  --set-env-vars SERVICE_ROLE=ingest,PUBSUB_TOPIC=whatsapp-events,... \
+  --set-env-vars SERVICE_ROLE=ingest,PUBSUB_TOPIC=whatsapp-events,INSTANCE_CONNECTION_NAME=...,DB_USER=...,DB_PASS=...,DB_NAME=... \
   --set-secrets WHATSAPP_APP_SECRET=...:latest,WHATSAPP_VERIFY_TOKEN=...:latest \
+  --add-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
   --service-account webhook-ingest@$PROJECT.iam.gserviceaccount.com
 ```
 
@@ -142,7 +146,7 @@ gcloud run deploy severino-webhook-worker \
   --cpu 1 --memory 512Mi \
   --add-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
   --set-env-vars SERVICE_ROLE=worker,PUBSUB_PUSH_AUDIENCE=$WORKER_URL,... \
-  --set-secrets DATABASE_URL=...:latest \
+  --set-env-vars INSTANCE_CONNECTION_NAME=...,DB_USER=...,DB_PASS=...,DB_NAME=... \
   --service-account webhook-worker@$PROJECT.iam.gserviceaccount.com
 ```
 

@@ -4,6 +4,7 @@
 # Frontend	              deployfront [major|minor|patch]     deployfront patch
 # Dashboard	              deploydash [major|minor|patch]      deploydash minor
 # Webhook	              deploywebhook [major|minor|patch]   deploywebhook patch
+# Database	              deploydatabase [major|minor|patch]  deploydatabase patch
 
 
 function create_and_push_tag() {
@@ -68,5 +69,6 @@ function create_and_push_tag() {
 alias deployfront='create_and_push_tag front'
 alias deploydash='create_and_push_tag dash'
 alias deploywebhook='create_and_push_tag webhook'
+alias deploydatabase='create_and_push_tag database'
 
 export -f create_and_push_tag # Export function for sub-shells if necessary
