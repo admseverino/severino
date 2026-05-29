@@ -182,6 +182,12 @@ gcloud iam service-accounts add-iam-policy-binding "$SA" \
   --project=$PROJECT \
   --member="serviceAccount:${SA}" \
   --role=roles/iam.serviceAccountUser
+
+# Cloud Build pnpm cache (gs://${PROJECT}_cloudbuild/cache/pnpm-store.tar.gz)
+gcloud storage buckets add-iam-policy-binding "gs://${PROJECT}_cloudbuild" \
+  --project=$PROJECT \
+  --member="serviceAccount:${SA}" \
+  --role=roles/storage.objectAdmin
 ```
 
 ### 5b. Cloud SQL public IP (for Cloud Build migrations)
