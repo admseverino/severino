@@ -17,6 +17,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | DB user | `postgres` (password in Secret Manager `severino-db-pass`) |
 | Artifact Registry | `us-east4-docker.pkg.dev/severino-project/severino` |
 | Service account | `severino-sa@severino-project.iam.gserviceaccount.com` — Cloud Build, Cloud Run runtime, Pub/Sub OIDC |
+| Cloud Build worker pool | `severino-build` (`us-east4`, peered to `severino-vpc`) — required for migrations to private Cloud SQL |
 
 ## Cloud Build triggers
 
@@ -136,7 +137,9 @@ Single SA for Cloud Build, Cloud Run runtime, and Pub/Sub OIDC push.
 
 ```bash
 PROJECT=severino-project
+PROJECT_NUM=261525847382
 SA=severino-sa@${PROJECT}.iam.gserviceaccount.com
+CB_AGENT="service-${PROJECT_NUM}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
 
 gcloud iam service-accounts create severino-sa \
   --project=$PROJECT --display-name="severino-sa"
@@ -147,11 +150,48 @@ for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/cloudsql.client \
     --member="serviceAccount:${SA}" --role="$ROLE"
 done
 
+for MEMBER in "$SA" "$CB_AGENT"; do
+  gcloud projects add-iam-policy-binding $PROJECT \
+    --member="serviceAccount:${MEMBER}" --role=roles/cloudbuild.workerPoolUser
+  gcloud projects add-iam-policy-binding $PROJECT \
+    --member="serviceAccount:${MEMBER}" --role=roles/compute.networkUser
+done
+
 # Cloud Run deploy attaches severino-sa as runtime identity (same as build SA)
 gcloud iam service-accounts add-iam-policy-binding "$SA" \
   --project=$PROJECT \
   --member="serviceAccount:${SA}" \
   --role=roles/iam.serviceAccountUser
+```
+
+### 5b. Private worker pool (migrations → private Cloud SQL)
+
+Cloud SQL has no public IP. Default Cloud Build workers cannot reach it. Use a VPC-peered private pool and `--private-ip` on the proxy (configured in [`cloudbuild.yaml`](../../cloudbuild.yaml)).
+
+Private pools share the VPC **Private Service Access** connection with Cloud SQL — allocate a second IP range and attach it to the peering before creating the pool:
+
+```bash
+gcloud compute addresses create severino-build-pool-range \
+  --project=severino-project \
+  --global \
+  --purpose=VPC_PEERING \
+  --prefix-length=24 \
+  --network=severino-vpc
+
+gcloud services vpc-peerings update \
+  --project=severino-project \
+  --network=severino-vpc \
+  --service=servicenetworking.googleapis.com \
+  --ranges=severino-vpc-peering-range,severino-build-pool-range \
+  --force
+
+gcloud builds worker-pools create severino-build \
+  --project=severino-project \
+  --region=us-east4 \
+  --peered-network=projects/severino-project/global/networks/severino-vpc \
+  --peered-network-ip-range=/28 \
+  --worker-machine-type=e2-medium \
+  --no-public-egress
 ```
 
 ### 6. Secrets

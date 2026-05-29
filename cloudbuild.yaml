@@ -10,6 +10,7 @@
 # IAM: severino-sa@ needs roles/cloudsql.client (Cloud Build runs as severino-sa).
 #
 # Root `.env` is not used in CI; DATABASE_URL is built from substitutions below.
+# Requires private worker pool `severino-build` (Cloud SQL is private-IP only).
 
 substitutions:
   _CLOUD_SQL_PROXY_VERSION: 'v2.18.3'
@@ -37,7 +38,7 @@ steps:
 
         curl -fsSL -o cloud-sql-proxy "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/${_CLOUD_SQL_PROXY_VERSION}/cloud-sql-proxy.linux.amd64"
         chmod +x cloud-sql-proxy
-        ./cloud-sql-proxy --address 127.0.0.1 --port 5432 "${_INSTANCE_CONNECTION_NAME}" &
+        ./cloud-sql-proxy --private-ip --address 127.0.0.1 --port 5432 "${_INSTANCE_CONNECTION_NAME}" &
         PROXY_PID=$!
         trap 'kill $${PROXY_PID}' EXIT
         sleep 3
@@ -54,3 +55,5 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  pool:
+    name: 'projects/severino-project/locations/us-east4/workerPools/severino-build'
