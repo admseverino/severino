@@ -17,7 +17,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | DB user | `postgres` (password in Secret Manager `severino-db-pass`) |
 | Artifact Registry | `us-east4-docker.pkg.dev/severino-project/severino` |
 | Service account | `severino-sa@severino-project.iam.gserviceaccount.com` — Cloud Build, Cloud Run runtime, Pub/Sub OIDC |
-| Cloud Build worker pool | `severino-build` (`us-east4`, peered to `severino-vpc`) — required for migrations to private Cloud SQL |
+| Cloud Build worker pool | `severino-build` (`us-east4`, optional — only for regional `gcloud builds submit --region=us-east4`) |
 
 ## Cloud Build triggers
 
@@ -26,7 +26,9 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | `severino-database-deploy` | `database-X.Y.Z` | [`cloudbuild.yaml`](../../cloudbuild.yaml) |
 | `severino-webhook-ingest-deploy` | `webhook-X.Y.Z` | [`severino-webhook/cloudbuild.yaml`](../../severino-webhook/cloudbuild.yaml) |
 
-Both triggers run as `severino-sa@`.
+Both triggers run as `severino-sa@` (global triggers — 1st-gen GitHub connection).
+
+**Important:** Global triggers cannot use a regional private worker pool. Database migrations reach Cloud SQL via the Auth Proxy over the instance **public IP** (IAM auth, no authorized networks). Cloud Run continues to use the **private IP** connector at runtime.
 
 ## Deploy workflow
 
@@ -157,6 +159,20 @@ for MEMBER in "$SA" "$CB_AGENT"; do
     --member="serviceAccount:${MEMBER}" --role=roles/compute.networkUser
 done
 
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:${SA}" --role=roles/logging.logWriter
+
+# Cloud Build service agent must impersonate severino-sa on trigger runs
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --project=$PROJECT \
+  --member="serviceAccount:${CB_AGENT}" \
+  --role=roles/iam.serviceAccountUser
+
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --project=$PROJECT \
+  --member="serviceAccount:${CB_AGENT}" \
+  --role=roles/iam.serviceAccountTokenCreator
+
 # Cloud Run deploy attaches severino-sa as runtime identity (same as build SA)
 gcloud iam service-accounts add-iam-policy-binding "$SA" \
   --project=$PROJECT \
@@ -164,34 +180,37 @@ gcloud iam service-accounts add-iam-policy-binding "$SA" \
   --role=roles/iam.serviceAccountUser
 ```
 
-### 5b. Private worker pool (migrations → private Cloud SQL)
+### 5b. Cloud SQL public IP (for Cloud Build migrations)
 
-Cloud SQL has no public IP. Default Cloud Build workers cannot reach it. Use a VPC-peered private pool and `--private-ip` on the proxy (configured in [`cloudbuild.yaml`](../../cloudbuild.yaml)).
+Global GitHub triggers run on default Cloud Build workers (no VPC). Enable a public IP so the Auth Proxy can connect during `database-X.Y.Z` deploys. No authorized networks are needed — access is IAM-only via the proxy.
 
-Private pools share the VPC **Private Service Access** connection with Cloud SQL — allocate a second IP range and attach it to the peering before creating the pool:
+```bash
+gcloud sql instances patch severino-sql \
+  --project=severino-project --assign-ip
+```
+
+Cloud Run services keep using `--add-cloudsql-instances` (private connector, private IP `10.132.0.3`).
+
+### 5c. Private worker pool (optional, regional builds only)
+
+Only needed if you move to **regional** triggers with a 2nd-gen GitHub connection (`gcloud builds connections`). Not compatible with the current global 1st-gen triggers.
 
 ```bash
 gcloud compute addresses create severino-build-pool-range \
-  --project=severino-project \
-  --global \
-  --purpose=VPC_PEERING \
-  --prefix-length=24 \
-  --network=severino-vpc
+  --project=severino-project --global --purpose=VPC_PEERING \
+  --prefix-length=24 --network=severino-vpc
 
 gcloud services vpc-peerings update \
-  --project=severino-project \
-  --network=severino-vpc \
+  --project=severino-project --network=severino-vpc \
   --service=servicenetworking.googleapis.com \
-  --ranges=severino-vpc-peering-range,severino-build-pool-range \
-  --force
+  --ranges=severino-vpc-peering-range,severino-build-pool-range --force
 
 gcloud builds worker-pools create severino-build \
-  --project=severino-project \
-  --region=us-east4 \
+  --project=severino-project --region=us-east4 \
   --peered-network=projects/severino-project/global/networks/severino-vpc \
   --peered-network-ip-range=/28 \
   --worker-machine-type=e2-medium \
-  --no-public-egress
+  --public-egress
 ```
 
 ### 6. Secrets
