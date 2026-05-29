@@ -15,6 +15,8 @@ export interface StoredWebhookEvent {
 
 export interface EventStore {
   insertRaw(input: RawEventInput): Promise<EventId>
+  /** Insert with a known id (e.g. replayed from Pub/Sub when the row lives in another DB). */
+  insertWithId(eventId: EventId, input: RawEventInput): Promise<EventId>
   loadById(eventId: EventId): Promise<StoredWebhookEvent | null>
   incrementProcessAttempts(eventId: EventId): Promise<void>
   markProcessed(eventId: EventId): Promise<void>

@@ -24,6 +24,11 @@ Run with **Node + pnpm** only. Docker is for **Cloud Build → Cloud Run** in GC
 
 4. Replay a signed fixture (see [`docs/local-development.md`](./docs/local-development.md)).
 
+### Cloud ingest + local worker
+
+When Meta points at Cloud Run ingest, run the worker locally against your **local Postgres** and
+wire a dev-only Pub/Sub subscription — see [Option A in `docs/local-development.md`](./docs/local-development.md).
+
 ## Production image
 
 The [`Dockerfile`](./Dockerfile) and [`cloudbuild.yaml`](./cloudbuild.yaml) build and deploy the same codebase to Cloud Run (`severino-webhook-ingest` + `severino-webhook-worker`). You do not need Docker installed locally for that pipeline to run on GCP.

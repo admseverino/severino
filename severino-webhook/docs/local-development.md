@@ -67,7 +67,65 @@ the worker's push endpoint over localhost instead of going through Pub/Sub — h
 through ingest→worker in a debugger. (This is an adapter swap, per
 [`module-structure.md`](./module-structure.md); the domain doesn't change.)
 
-## Exposing the endpoint to Meta
+## Cloud ingest + local worker (Option A)
+
+Use this when Meta's webhook already points at **Cloud Run ingest** and you want the worker to
+**write to your local Postgres**. Cloud ingest and the prod worker (`whatsapp-events-push`) stay
+unchanged; a **second** Pub/Sub subscription fans the same events to your tunneled local worker.
+
+Ingest publishes the full webhook payload on Pub/Sub (not just `eventId`). The local worker
+materializes the event row locally, then processes it — no Cloud SQL proxy required.
+
+```
+Meta → Cloud Run ingest → whatsapp-events topic
+                              ├─ whatsapp-events-push        → Cloud Run worker → Cloud SQL
+                              └─ whatsapp-events-push-local  → ngrok → local worker → local Postgres
+```
+
+> **Deploy once:** redeploy the webhook (`webhook-X.Y.Z` tag) so cloud ingest sends the enriched
+> Pub/Sub message. The cloud worker still loads events from Cloud SQL as before.
+
+### Prerequisites
+
+- Local Postgres with migrations applied (`pnpm run db:migrate`)
+- `DATABASE_URL` in repo root `.env` or `severino-webhook/.env`
+- A tunnel tool ([ngrok](https://ngrok.com/) or [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/))
+- `gcloud` authenticated to `severino-project`
+
+### 1. Start the local worker
+
+```bash
+pnpm --filter severino-webhook run dev:worker:cloud   # :8081, writes to local DATABASE_URL
+```
+
+### 2. Tunnel the worker and wire Pub/Sub
+
+```bash
+# terminal — expose :8081 (not ingest; Meta already hits Cloud Run)
+ngrok http 8081
+# or: cloudflared tunnel --url http://localhost:8081
+
+# terminal — create or update the dev subscription (prod subscription untouched)
+WORKER_TUNNEL_URL=https://YOUR-TUNNEL-HOST \
+  pnpm --filter severino-webhook run pubsub:wire-local
+```
+
+Re-run `pubsub:wire-local` whenever the tunnel URL changes (ngrok free tier rotates URLs).
+
+### 3. Verify
+
+Send a WhatsApp test message. Check local worker logs and query local `whatsapp_events` /
+`whatsapp_messages`. Cloud Run continues processing into Cloud SQL independently.
+
+### Teardown
+
+```bash
+pnpm --filter severino-webhook run pubsub:teardown-local
+```
+
+This deletes only `whatsapp-events-push-local`. Prod ingest, worker, and `whatsapp-events-push`
+are not modified.
+
 
 Meta requires a public HTTPS URL with a valid certificate (self-signed is rejected). For local
 testing against the real Meta dashboard, tunnel:

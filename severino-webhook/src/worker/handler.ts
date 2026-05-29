@@ -4,6 +4,7 @@ import { DrizzleMessageStore } from '../adapters/drizzle-message-store.js'
 import { log } from '../observability/log.js'
 import { processWebhookEvent } from '../whatsapp/process-event.js'
 import { asEventId } from '../whatsapp/types.js'
+import { ensureEventInStore } from './ensure-event.js'
 
 const PubSubPushSchema = z.object({
   message: z.object({
@@ -16,6 +17,9 @@ const PubSubPushSchema = z.object({
 
 const EventMessageSchema = z.object({
   eventId: z.string().min(1),
+  signature: z.string().nullable().optional(),
+  payload: z.unknown().optional(),
+  rawBody: z.string().optional(),
 })
 
 const eventStore = new DrizzleEventStore()
@@ -24,9 +28,12 @@ const messageStore = new DrizzleMessageStore()
 export async function handlePubSubPush(body: unknown): Promise<void> {
   const envelope = PubSubPushSchema.parse(body)
   const decoded = Buffer.from(envelope.message.data, 'base64').toString('utf8')
-  const { eventId } = EventMessageSchema.parse(JSON.parse(decoded) as unknown)
+  const message = EventMessageSchema.parse(JSON.parse(decoded) as unknown)
+  const eventId = asEventId(message.eventId)
 
-  await processWebhookEvent(asEventId(eventId), {
+  await ensureEventInStore(eventId, message, eventStore)
+
+  await processWebhookEvent(eventId, {
     eventStore,
     messageStore,
   })
