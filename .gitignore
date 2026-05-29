@@ -7,18 +7,18 @@
 packages/**/node_modules
 
 reference-code/
-hidrosync-service/node_modules
+severino-service/node_modules
 
 # testing
 /coverage
-hidrosync-service/playwright-report/
-hidrosync-service/test-results/
+severino-service/playwright-report/
+severino-service/test-results/
 
 # next.js
 /.next/
 /out/
-hidrosync-service/.next/
-hidrosync-service/out/
+severino-service/.next/
+severino-service/out/
 
 # turbo / build
 .turbo/
@@ -43,5 +43,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-hidrosync-service/*.tsbuildinfo
-hidrosync-service/next-env.d.ts
+severino-service/*.tsbuildinfo
+severino-service/next-env.d.ts

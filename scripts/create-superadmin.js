@@ -1,7 +1,7 @@
 /**
  * Loads repo-root `.env` / `.env.local` without overriding existing env vars, then applies
- * `hidrosync-service/.env` + `.env.local` for DATABASE_URL / DATABASE_SSL (same DB as Next.js).
- * Resolves superadmin credentials, then runs `hidrosync-service` create-superadmin (tsx).
+ * `severino-service/.env` + `.env.local` for DATABASE_URL / DATABASE_SSL (same DB as Next.js).
+ * Resolves superadmin credentials, then runs `severino-service` create-superadmin (tsx).
  */
 const fs = require('node:fs')
 const path = require('node:path')
@@ -60,8 +60,8 @@ function parseEnvFile(filePath) {
 }
 
 /** Match `loadProvisioningEnv`: service env wins for DB URL (same as `next dev`). */
-function applyHidrosyncServiceDatabaseEnv(repoRoot) {
-  const serviceDir = path.join(repoRoot, 'hidrosync-service')
+function applySeverinoServiceDatabaseEnv(repoRoot) {
+  const serviceDir = path.join(repoRoot, 'severino-service')
   const merged = {}
   for (const name of ['.env', '.env.local']) {
     Object.assign(merged, parseEnvFile(path.join(serviceDir, name)))
@@ -93,7 +93,7 @@ loadDotenvNoOverride([
   path.join(REPO_ROOT, '.env.local'),
 ])
 
-applyHidrosyncServiceDatabaseEnv(REPO_ROOT)
+applySeverinoServiceDatabaseEnv(REPO_ROOT)
 
 const emailRaw =
   process.env.superadminuser ??
@@ -119,7 +119,7 @@ console.log('▶ database:', describeDatabaseUrl(process.env.DATABASE_URL))
 
 const result = spawnSync(
   'pnpm',
-  ['--filter', 'hidrosync-service', 'run', 'create-superadmin'],
+  ['--filter', 'severino-service', 'run', 'create-superadmin'],
   {
     cwd: REPO_ROOT,
     stdio: 'inherit',

@@ -1,7 +1,7 @@
-# Playwright Testing Guide (`hidrosync-service`)
+# Playwright Testing Guide (`severino-service`)
 
 ## Scope
-- Use this guide for end-to-end browser testing in `hidrosync-service`.
+- Use this guide for end-to-end browser testing in `severino-service`.
 - Prefer deterministic smoke flows first, then expand to role-based and regression scenarios.
 - Run from repository root unless noted otherwise.
 
@@ -10,32 +10,32 @@
 ### Install dependencies
 ```bash
 pnpm install
-pnpm --filter hidrosync-service run test:e2e:install
+pnpm --filter severino-service run test:e2e:install
 ```
 
 ### Start target app(s)
 ```bash
 # Terminal 1
-pnpm --filter hidrosync-service run dev
+pnpm --filter severino-service run dev
 
-### Run existing `hidrosync-service` Playwright tests
+### Run existing `severino-service` Playwright tests
 ```bash
 # CI-style (headless)
-pnpm --filter hidrosync-service run test:e2e
+pnpm --filter severino-service run test:e2e
 
 # Cursor Browser interactive flow
-pnpm --filter hidrosync-service run test:e2e:cursor
+pnpm --filter severino-service run test:e2e:cursor
 ```
 
 ## 2) Service-Specific Instructions
 
-## `hidrosync-service`
-- Existing E2E location: `hidrosync-service/tests/e2e`.
-- Existing config: `hidrosync-service/playwright.config.ts`.
+## `severino-service`
+- Existing E2E location: `severino-service/tests/e2e`.
+- Existing config: `severino-service/playwright.config.ts`.
 - Existing scripts:
-  - `pnpm --filter hidrosync-service run typecheck:e2e`
-  - `pnpm --filter hidrosync-service run test:e2e`
-  - `pnpm --filter hidrosync-service run test:e2e:cursor`
+  - `pnpm --filter severino-service run typecheck:e2e`
+  - `pnpm --filter severino-service run test:e2e`
+  - `pnpm --filter severino-service run test:e2e:cursor`
 - If auth tests are needed, define:
   - `E2E_USER_EMAIL`
   - `E2E_USER_PASSWORD`

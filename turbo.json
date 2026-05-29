@@ -9,7 +9,11 @@
       "cache": false,
       "persistent": true
     },
-    "hidrosync-service#dev": {
+    "severino-service#dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "severino-webhook#dev": {
       "cache": false,
       "persistent": true
     },

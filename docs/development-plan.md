@@ -1,8 +1,8 @@
-# HidroSync Development Plan
+# Severino Development Plan
 
-This document captures **how** we are going to build HidroSync, complementary to:
+This document captures **how** we are going to build Severino, complementary to:
 
-- [`hidrosync_workflow.md`](../hidrosync_workflow.md) — the product spec (what the system does).
+- [`severino_workflow.md`](../severino_workflow.md) — the product spec (what the system does).
 - [`Infrastructure-plan.md`](../Infrastructure-plan.md) — the GCP/Terraform infra plan.
 - [`docs/architecture-decisions.md`](./architecture-decisions.md) — the discrete tech choices.
 - [`docs/meter-reading-pipeline.md`](./meter-reading-pipeline.md) — the QR + AI vision pipeline (the trickiest single feature).
@@ -15,10 +15,10 @@ The plan has two axes: a **folder scaffold** (so the codebase stays navigable as
 
 The README commits to Next.js 14 App Router + shadcn + raw `pg`. The workflow has clear bounded contexts (onboarding, periods, readings, consumption, billing, audit) — make those first-class folders in the app so they don't bleed into each other.
 
-**Drizzle stays at repo root**, not under `hidrosync-service/lib/`. Follow the same layout as [`reference-code/packages/db`](../reference-code/packages/db): a small **workspace package** (`packages/db`) owns the Drizzle schema (`src/schema/`), pool + client wiring (`src/client.ts`, `src/pool.ts` or equivalent), **SQL migrations** (`migrations/` + `drizzle.config.ts`), and **reusable query helpers** (e.g. `src/queries/` — period gates, scope joins, anything multiple `modules/` need). `hidrosync-service` lists that package as a workspace dependency and imports the typed client and schema from there; the Next app does not duplicate schema or a second Drizzle entry point.
+**Drizzle stays at repo root**, not under `severino-service/lib/`. Follow the same layout as [`reference-code/packages/db`](../reference-code/packages/db): a small **workspace package** (`packages/db`) owns the Drizzle schema (`src/schema/`), pool + client wiring (`src/client.ts`, `src/pool.ts` or equivalent), **SQL migrations** (`migrations/` + `drizzle.config.ts`), and **reusable query helpers** (e.g. `src/queries/` — period gates, scope joins, anything multiple `modules/` need). `severino-service` lists that package as a workspace dependency and imports the typed client and schema from there; the Next app does not duplicate schema or a second Drizzle entry point.
 
 ```plaintext
-hidrosync/
+severino/
 ├── packages/
 │   └── db/                           # workspace package — Drizzle only (mirror reference-code/packages/db)
 │       ├── src/
@@ -28,7 +28,7 @@ hidrosync/
 │       │   └── migrate.ts            # entry for drizzle-kit migrate / CI
 │       ├── migrations/               # generated SQL (committed)
 │       └── drizzle.config.ts
-├── hidrosync-service/
+├── severino-service/
 │   ├── app/                          # App Router (UI + thin route handlers)
 │   │   ├── (marketing)/              # public landing, login (route group, no auth)
 │   │   ├── (app)/                    # auth-required shell
@@ -87,13 +87,13 @@ hidrosync/
 
 ### Why `modules/` and not just `lib/`
 
-Each section of the workflow (`§4 Meter Reading`, `§5 Review`, `§6 Consumption`, `§7 Billing`, `Meter Lifecycle`, `Audit Log`) maps to a `hidrosync-service/modules/<context>` folder you can grep for. **`packages/db`** holds everything that talks to Postgres types and SQL shape (schema, client, migrations, cross-cutting query helpers). **`hidrosync-service/lib/`** stays for app-local, non-DB infrastructure (GCS, EXIF, CSV writer, shared Zod) and must not reintroduce a second Drizzle layer.
+Each section of the workflow (`§4 Meter Reading`, `§5 Review`, `§6 Consumption`, `§7 Billing`, `Meter Lifecycle`, `Audit Log`) maps to a `severino-service/modules/<context>` folder you can grep for. **`packages/db`** holds everything that talks to Postgres types and SQL shape (schema, client, migrations, cross-cutting query helpers). **`severino-service/lib/`** stays for app-local, non-DB infrastructure (GCS, EXIF, CSV writer, shared Zod) and must not reintroduce a second Drizzle layer.
 
 ### Route group conventions
 
 - `(marketing)` — unauthenticated public surface (landing, login, password reset).
 - `(app)` — authenticated shell with the global nav, role-aware sidebar, condo switcher.
-- `hidrosync-service/app/api/` — route handlers. Keep them thin: parse + authorize + delegate to `hidrosync-service/modules/`.
+- `severino-service/app/api/` — route handlers. Keep them thin: parse + authorize + delegate to `severino-service/modules/`.
 
 ---
 
@@ -103,14 +103,14 @@ These foundations every later milestone depends on, so build them once with care
 
 | Concern | What to scaffold |
 |---|---|
-| **DB schema + migrations** | Workspace package `packages/db`: Drizzle ORM with the full schema from `hidrosync_workflow.md §Data Model`. `drizzle-kit generate` writes into `packages/db/migrations`; migrate runs from that package (or via root/workspace script). The Next app imports schema and client only from this package. See [`architecture-decisions.md`](./architecture-decisions.md#41-orm--migrations-drizzle). |
-| **RBAC primitives** | `hidrosync-service/modules/rbac/` exports `getEffectiveGrants(userId, condoId)` and `requireRole(scope, role)`. Every server action and route handler funnels through it. The "union of grants" rule from the spec lives here, nowhere else. |
-| **Period-aware queries** | Implement in `packages/db/src/queries/` (or equivalent) so all callers share one typed definition: e.g. `getOpenPeriod(condoId)`, `assertPeriodState(periodId, ['reading_open'])`. `hidrosync-service/modules/periods` orchestrates the state machine; DB reads/writes go through the workspace package. |
-| **Audit log writer** | `hidrosync-service/modules/audit/log.ts` with one function `writeAudit({ actor, entity, action, before, after, reason })`. **Every mutation** calls it — make it required by passing it as the first argument of the transaction helper. |
+| **DB schema + migrations** | Workspace package `packages/db`: Drizzle ORM with the full schema from `severino_workflow.md §Data Model`. `drizzle-kit generate` writes into `packages/db/migrations`; migrate runs from that package (or via root/workspace script). The Next app imports schema and client only from this package. See [`architecture-decisions.md`](./architecture-decisions.md#41-orm--migrations-drizzle). |
+| **RBAC primitives** | `severino-service/modules/rbac/` exports `getEffectiveGrants(userId, condoId)` and `requireRole(scope, role)`. Every server action and route handler funnels through it. The "union of grants" rule from the spec lives here, nowhere else. |
+| **Period-aware queries** | Implement in `packages/db/src/queries/` (or equivalent) so all callers share one typed definition: e.g. `getOpenPeriod(condoId)`, `assertPeriodState(periodId, ['reading_open'])`. `severino-service/modules/periods` orchestrates the state machine; DB reads/writes go through the workspace package. |
+| **Audit log writer** | `severino-service/modules/audit/log.ts` with one function `writeAudit({ actor, entity, action, before, after, reason })`. **Every mutation** calls it — make it required by passing it as the first argument of the transaction helper. |
 | **GCS + EXIF pipeline** | One ingest function `ingestPhoto(file)` that uploads, returns the GCS path + parsed EXIF + EXIF capture timestamp. Used by reading capture **and** logo upload. |
-| **AI adapter (OpenRouter)** | `hidrosync-service/modules/ai/MeterReader.ts` interface with a `MockMeterReader` for dev and `OpenRouterMeterReader` for real use. See [`meter-reading-pipeline.md`](./meter-reading-pipeline.md). |
+| **AI adapter (OpenRouter)** | `severino-service/modules/ai/MeterReader.ts` interface with a `MockMeterReader` for dev and `OpenRouterMeterReader` for real use. See [`meter-reading-pipeline.md`](./meter-reading-pipeline.md). |
 | **Polymorphic scope view** | A SQL view `meter_scope_resolved` that flattens `(meter, target_kind, target_id)` rows from `linked_meters` into the actual unit set each meter covers. Used everywhere consumption is computed. See [`architecture-decisions.md`](./architecture-decisions.md#45-polymorphic-linked_meters--resolved-via-a-sql-view). |
-| **Zod schemas** | Per entity, in `hidrosync-service/lib/validation/`. Reused by API route handlers and React Hook Form. |
+| **Zod schemas** | Per entity, in `severino-service/lib/validation/`. Reused by API route handlers and React Hook Form. |
 | **Test harness** | Playwright config + `tests/e2e/fixtures` that boots a condo via the seed script. Each milestone adds one happy-path e2e test. |
 
 ---
@@ -124,10 +124,10 @@ Ten milestones, each a 1–3 day vertical slice that ends in a working URL. Stri
 The single initial PR that everything else builds on.
 
 - Next.js 14 + TS + Tailwind + shadcn baseline (some of this exists in `reference-code/option-service/`).
-- Monorepo workspace wiring: `packages/db` (patterned on `reference-code/packages/db`) + `hidrosync-service` depending on it.
-- Drizzle in `packages/db`: **full schema from `hidrosync_workflow.md §Data Model`** as the initial migration. Tempting to do incrementally, but the tables are tightly coupled (FKs everywhere) and the shape is already fully specified.
+- Monorepo workspace wiring: `packages/db` (patterned on `reference-code/packages/db`) + `severino-service` depending on it.
+- Drizzle in `packages/db`: **full schema from `severino_workflow.md §Data Model`** as the initial migration. Tempting to do incrementally, but the tables are tightly coupled (FKs everywhere) and the shape is already fully specified.
 - NextAuth (Google + credentials) + a `users` row on first login.
-- `hidrosync-service/modules/rbac` with `user_condo_grants` and `user_unit_grants` working end-to-end against a seeded admin.
+- `severino-service/modules/rbac` with `user_condo_grants` and `user_unit_grants` working end-to-end against a seeded admin.
 - Audit log writer, GCS helper, EXIF parser, AI adapter interface (with mock).
 - The `meter_scope_resolved` SQL view.
 - Playwright config + one smoke test (login + see admin home).
@@ -154,7 +154,7 @@ The single initial PR that everything else builds on.
 
 ### M3 — Period state machine + scheduler *(§3)*
 
-- `periods` table + transitions enforced in `hidrosync-service/modules/periods/transitions.ts`.
+- `periods` table + transitions enforced in `severino-service/modules/periods/transitions.ts`.
 - Cron endpoint `/api/scheduler/tick` invoked daily by Cloud Scheduler.
 - Per-condo `condo_config` honored for reading day / window / billing day.
 - Notifications stubbed (log lines; real email/push later).

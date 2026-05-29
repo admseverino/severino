@@ -1,4 +1,4 @@
-# HidroSync - Smart Meter Reading and Monitoring System
+# Severino - Smart Meter Reading and Monitoring System
 
 A modern, full-stack smart meter reading and monitoring system, built with Next.js, TypeScript, and a suite of Google Cloud services. The platform covers the complete meter reading and monitoring lifecycle — from meter reading to reading review and error catching to export and integration with external billing systems. These are some of the features:
 
@@ -13,7 +13,7 @@ A modern, full-stack smart meter reading and monitoring system, built with Next.
 
 | Document | What it covers |
 |---|---|
-| [`hidrosync_workflow.md`](./hidrosync_workflow.md) | Product spec — roles, monthly cycle, data model, lifecycle |
+| [`severino_workflow.md`](./severino_workflow.md) | Product spec — roles, monthly cycle, data model, lifecycle |
 | [`Infrastructure-plan.md`](./Infrastructure-plan.md) | GCP / Terraform plan (phase 1, dev only) |
 | [`docs/development-plan.md`](./docs/development-plan.md) | Folder scaffold, cross-cutting foundations, milestone delivery (M0 → M10) |
 | [`docs/architecture-decisions.md`](./docs/architecture-decisions.md) | Locked-in tech choices: Drizzle, period state machine, scheduler, polymorphic view |
@@ -25,7 +25,8 @@ The repository is a monorepo containing the main app, deployed to Google Cloud R
 
 | Service | Directory | Description |
 |---------|-----------|-------------|
-| Main App | `hidrosync-service/` | Next.js app: onboarding, meters, readings, consumption, billing |
+| Main App | `severino-service/` | Next.js app: onboarding, meters, readings, consumption, billing |
+| WhatsApp Webhook | `severino-webhook/` | Receives WhatsApp Cloud API webhooks (ingest + async worker on Cloud Run) |
 | Redirect | `redirect-service/` | `www.*` → apex 301 redirect (added in phase 2) |
 
 Additional services, jobs, and Cloud Functions can be added later as the platform grows. See [`Infrastructure-plan.md`](./Infrastructure-plan.md) for the GCP/Terraform plan.
@@ -34,7 +35,7 @@ Additional services, jobs, and Cloud Functions can be added later as the platfor
 
 | Database | Used by | Purpose |
 |----------|---------|---------|
-| `hidrosync_service` | Main App | Users, condos, meters, periods, readings, consumption, billing exports, audit log |
+| `hidrosync-service` | Main App | Users, condos, meters, periods, readings, consumption, billing exports, audit log |
 
 Single Cloud SQL Postgres instance per environment (dev / prod), with one logical database per service that needs persistence. See [`Infrastructure-plan.md`](./Infrastructure-plan.md) for the dev-environment details.
 
@@ -70,7 +71,7 @@ Single Cloud SQL Postgres instance per environment (dev / prod), with one logica
 
 - Node.js (latest LTS recommended, e.g. 20.x or 22.x)
 - [pnpm](https://pnpm.io/) 9.x (see root `packageManager` in [`package.json`](./package.json))
-- PostgreSQL database (`hidrosync_service`)
+- PostgreSQL database (`hidrosync-service`)
 - Google Cloud credentials (for GCS media uploads in development: `gcloud auth application-default login`)
 
 ### Installation
@@ -79,7 +80,7 @@ Single Cloud SQL Postgres instance per environment (dev / prod), with one logica
 
 ```bash
 git clone <repository-url>
-cd hidrosync
+cd severino
 ```
 
 2. Install dependencies (monorepo workspace):
@@ -91,7 +92,7 @@ pnpm install
 3. Set up environment variables for the app:
 
 ```bash
-cp hidrosync-service/env.example hidrosync-service/.env
+cp severino-service/env.example severino-service/.env
 # Also copy or symlink DATABASE_URL to the repo root `.env` if you run migrations from root
 ```
 
@@ -104,13 +105,13 @@ pnpm run db:migrate
 5. Seed a development system admin (interactive):
 
 ```bash
-pnpm --filter hidrosync-service run create-admin
+pnpm --filter severino-service run create-admin
 ```
 
 6. Run the development server:
 
 ```bash
-pnpm --filter hidrosync-service run dev
+pnpm --filter severino-service run dev
 # or from repo root:
 pnpm dev
 ```
@@ -128,21 +129,21 @@ Root (`pnpm` from repo root):
 - `pnpm run db:migrate` — Apply migrations
 - `pnpm run db:check` — Check migration drift
 
-`hidrosync-service`:
+`severino-service`:
 
-- `pnpm --filter hidrosync-service run dev` — Next.js dev server
-- `pnpm --filter hidrosync-service run build` — Production build
-- `pnpm --filter hidrosync-service run start` — Start production server
-- `pnpm --filter hidrosync-service run lint` — ESLint
-- `pnpm --filter hidrosync-service run create-admin` — Create/update a `system_admin` user (interactive)
+- `pnpm --filter severino-service run dev` — Next.js dev server
+- `pnpm --filter severino-service run build` — Production build
+- `pnpm --filter severino-service run start` — Start production server
+- `pnpm --filter severino-service run lint` — ESLint
+- `pnpm --filter severino-service run create-admin` — Create/update a `system_admin` user (interactive)
 
 ## Project Structure
 
 ```plaintext
-hidrosync/
+severino/
 ├── packages/
-│   └── db/                       # Workspace package: Drizzle schema + migrations (@hidrosync/db)
-├── hidrosync-service/            # Main Next.js app (App Router)
+│   └── db/                       # Workspace package: Drizzle schema + migrations (@severino/db)
+├── severino-service/            # Main Next.js app (App Router)
 │   ├── app/                      # Routes (route groups: (marketing), (app), api)
 │   ├── components/               # React components (ui/, layout/, …)
 │   ├── modules/                  # Server-side domain logic per bounded context
@@ -156,16 +157,16 @@ hidrosync/
 │   ├── development-plan.md       # Folder scaffold + cross-cutting + milestones
 │   ├── architecture-decisions.md # Locked-in tech choices
 │   └── meter-reading-pipeline.md # QR + AI vision deep dive
-├── hidrosync_workflow.md         # Product spec
+├── severino_workflow.md         # Product spec
 ├── Infrastructure-plan.md        # GCP / Terraform plan
 └── README.md                     # This file
 ```
 
-For the full per-folder breakdown of `hidrosync-service/`, see [`docs/development-plan.md`](./docs/development-plan.md#1-folder-scaffold-hidrosync-service).
+For the full per-folder breakdown of `severino-service/`, see [`docs/development-plan.md`](./docs/development-plan.md#1-folder-scaffold-severino-service).
 
 ## Key Features
 
-End-to-end smart-meter management built around a recurring monthly cycle. **Phase 1 covers water meters only.** For the full specification, see [hidrosync_workflow.md](./hidrosync_workflow.md).
+End-to-end smart-meter management built around a recurring monthly cycle. **Phase 1 covers water meters only.** For the full specification, see [severino_workflow.md](./severino_workflow.md).
 
 ### Authentication & User Profiles
 
@@ -205,7 +206,7 @@ Each condo can have **N master meters** (e.g. one per tower); common-area consum
 
 ### Billing Export
 
-`/billing` produces a **versioned** CSV per period once `closed`. HidroSync stops at export — invoicing, dunning, and payment tracking belong to the external billing system.
+`/billing` produces a **versioned** CSV per period once `closed`. Severino stops at export — invoicing, dunning, and payment tracking belong to the external billing system.
 
 ### Meter Lifecycle
 
@@ -225,12 +226,12 @@ Configure these in your `.env` file (see `env.example`):
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string for the `hidrosync_service` database |
+| `DATABASE_URL` | PostgreSQL connection string for the `hidrosync-service` database |
 | `NEXTAUTH_URL` | Public URL of the application |
 | `NEXTAUTH_SECRET` | NextAuth.js secret key |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID (optional) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (optional) |
-| `NEXT_PUBLIC_MEDIA_BASE_URL` | Base URL for media served from GCS (e.g. `https://media.hidrosync.com.br/`) |
+| `NEXT_PUBLIC_MEDIA_BASE_URL` | Base URL for media served from GCS (e.g. `https://media.severino.com.br/`) |
 | `NEXT_PUBLIC_BASE_URL` | Public application URL |
 | `OPENROUTER_API_KEY` | API key for OpenRouter (shared by meter-reader + onboarding-parser) |
 | `OPENROUTER_METER_MODEL` | Vision model for meter-value extraction (default: `google/gemini-2.5-flash`) |
@@ -238,7 +239,7 @@ Configure these in your `.env` file (see `env.example`):
 | `AI_METER_READER` | `openrouter` or `mock` — dev/tests use `mock` |
 | `AI_ONBOARDING_PARSER` | `openrouter` or `mock` — dev/tests use `mock` |
 | `RESEND_API_KEY` | API key for Resend transactional email |
-| `EMAIL_FROM` | Sender address for outgoing email (e.g. `noreply@hidrosync.com.br`) |
+| `EMAIL_FROM` | Sender address for outgoing email (e.g. `noreply@severino.com.br`) |
 | `SCHEDULER_OIDC_AUDIENCE` | Audience claim Cloud Scheduler signs `/api/scheduler/tick` calls with |
 | `NODE_ENV` | `development` or `production` |
 
@@ -256,7 +257,7 @@ The Dockerfile uses a three-stage build:
 2. **builder** — compiles the Next.js app in standalone mode
 3. **runner** — minimal production image; copies only the standalone output and static files
 
-Cloud Build (`hidrosync-service/cloudbuild.yaml`) builds the image, pushes it to Artifact Registry, and deploys to Cloud Run with:
+Cloud Build (`severino-service/cloudbuild.yaml`) builds the image, pushes it to Artifact Registry, and deploys to Cloud Run with:
 
 - 1 CPU, 1 GiB memory
 - 0 minimum instances, up to 10 instances
@@ -266,19 +267,19 @@ Cloud Build (`hidrosync-service/cloudbuild.yaml`) builds the image, pushes it to
 
 ### Redirect Service
 
-A lightweight Express server deployed as a Cloud Run service from `redirect-service/`. Issues 301 permanent redirects from `www.hidrosync.com.br` to `hidrosync.com.br` (and any other `www.*` subdomain to its apex equivalent).
+A lightweight Express server deployed as a Cloud Run service from `redirect-service/`. Issues 301 permanent redirects from `www.severino.com.br` to `severino.com.br` (and any other `www.*` subdomain to its apex equivalent).
 
 ## Scripts and Migrations
 
 Each service owns the setup and migration scripts for the database it primarily manages.
 
-### `hidrosync-service/drizzle/` (schema + migrations)
+### `severino-service/drizzle/` (schema + migrations)
 
 - `schema/` — Drizzle schema files, one per bounded context (`condos.ts`, `meters.ts`, `readings.ts`, …)
 - `migrations/` — generated SQL migrations, committed to git. Apply with `npm run db:migrate`.
 - `views/` — hand-written migrations for SQL views (notably `meter_scope_resolved`, which flattens the polymorphic `linked_meters` table). See [`docs/architecture-decisions.md`](./docs/architecture-decisions.md#45-polymorphic-linked_meters--resolved-via-a-sql-view).
 
-### `hidrosync-service/scripts/`
+### `severino-service/scripts/`
 
 - `create-admin.ts` — create a System admin account interactively
 - `seed-dev.ts` — load a small fixture (one condo, a few units, a sysadmin) for local development

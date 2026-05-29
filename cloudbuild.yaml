@@ -1,4 +1,4 @@
-# HidroSync — database migrate, schema check, then bootstrap superadmin.
+# Severino — database migrate, schema check, then bootstrap superadmin.
 #
 # Set substitutions on the trigger (Secret Manager recommended for passwords):
 #   _INSTANCE_CONNECTION_NAME — Cloud SQL instance (project:region:instance)
@@ -47,7 +47,7 @@ steps:
         corepack enable
         corepack prepare pnpm@9.15.4 --activate
 
-        pnpm --filter @hidrosync/db run build
+        pnpm --filter @severino/db run build
 
         pnpm run db:migrate
         pnpm run db:check

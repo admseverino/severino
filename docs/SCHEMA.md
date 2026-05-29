@@ -1,7 +1,7 @@
 # Database Schema and Migrations
 
-- Single source of truth: [`packages/db`](../packages/db) (`@hidrosync/db`).
-- The Next.js app (`hidrosync-service`) imports the typed client and schema only from this package.
+- Single source of truth: [`packages/db`](../packages/db) (`@severino/db`).
+- The Next.js app (`severino-service`) imports the typed client and schema only from this package.
 
 ## Change workflow
 

@@ -1,0 +1,19 @@
+# Unix/macOS local dev and Linux CI — CRLF breaks `sh` scripts and `. env` sourcing.
+* text=auto eol=lf
+
+*.sh text eol=lf
+env.example text eol=lf
+.env.example text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.webp -text
+*.ico -text
+*.woff -text
+*.woff2 -text
+*.zip -text
+*.gz -text

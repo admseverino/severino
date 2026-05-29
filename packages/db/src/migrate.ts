@@ -26,7 +26,7 @@ function getMonorepoRootDir(startDir: string): string {
     dir = parent
   }
   throw new Error(
-    'Could not find monorepo root (pnpm-workspace.yaml). Run `pnpm run db:migrate` from the HidroSync repo.'
+    'Could not find monorepo root (pnpm-workspace.yaml). Run `pnpm run db:migrate` from the Severino repo.'
   )
 }
 
@@ -133,9 +133,9 @@ async function main(): Promise<void> {
   await ensureDatabaseExists()
 
   const pool = new Pool(getPoolConfig())
-  console.log('▶ migrating hidrosync')
+  console.log('▶ migrating severino')
   await migrate(drizzle(pool), { migrationsFolder })
-  console.log('✓ hidrosync')
+  console.log('✓ severino')
   await pool.end()
 }
 

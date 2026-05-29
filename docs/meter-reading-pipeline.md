@@ -1,6 +1,6 @@
 # Meter Reading Pipeline — QR Detection + AI Vision
 
-The single trickiest feature in HidroSync: turning "operator points phone at a meter" into a stored, validated, audit-ready reading. This document is the reference for §4 of the workflow.
+The single trickiest feature in Severino: turning "operator points phone at a meter" into a stored, validated, audit-ready reading. This document is the reference for §4 of the workflow.
 
 ---
 
@@ -60,10 +60,10 @@ When offline, steps 5–6 happen against IndexedDB instead of GCS, and steps 7�
 A URL of the form:
 
 ```text
-https://app.hidrosync.com.br/r/<meter_id>
+https://app.severino.com.br/r/<meter_id>
 ```
 
-Where `<meter_id>` is the meter's UUID. Encoding a URL (not just an opaque ID) means **any phone QR scanner** opens the right page; we don't need our own scanner app for the QR step. When the URL is opened in HidroSync, it lands on the reading flow.
+Where `<meter_id>` is the meter's UUID. Encoding a URL (not just an opaque ID) means **any phone QR scanner** opens the right page; we don't need our own scanner app for the QR step. When the URL is opened in Severino, it lands on the reading flow.
 
 We may add a signed token query string later to harden against printed-QR theft, but for phase 1 a UUID is fine — the server already enforces that the meter belongs to the operator's condo and the period is open.
 

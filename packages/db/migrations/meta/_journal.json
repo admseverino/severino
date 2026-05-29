@@ -22,6 +22,13 @@
       "when": 1778529155648,
       "tag": "0002_dizzy_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780068480444,
+      "tag": "0003_breezy_power_pack",
+      "breakpoints": true
     }
   ]
 }

@@ -1,16 +1,16 @@
-# HidroSync Phase-1 GCP Infrastructure Plan
+# Severino Phase-1 GCP Infrastructure Plan
 
 ## Scope And Goals
-- Create a **new** Terraform infrastructure baseline for HidroSync (not a copy of the reference) for **dev only**.
+- Create a **new** Terraform infrastructure baseline for Severino (not a copy of the reference) for **dev only**.
 - Keep proven strengths from the reference: serverless deployment model, private Cloud SQL path, explicit service/resource grouping, and reproducible infra-as-code.
-- Deliver only phase-1 services now: `hidrosync-service` and `redirect-service`.
+- Deliver only phase-1 services now: `severino-service` and `redirect-service`.
 - Optimize for fast MVP delivery while preserving a clean upgrade path to stricter security.
 
 ## Live GCP Discovery Snapshot (gcloud)
-- Active project and target project both resolve to `hidrosync` (project name `HidroSync`, project number available).
+- Active project and target project both resolve to `severino` (project name `Severino`, project number available).
 - `gcloud storage buckets list` returned zero buckets.
-- Listing Cloud Run, Artifact Registry, Cloud SQL, Cloud Build triggers, and Cloud Run domain mappings prompted to enable their APIs first, indicating those services are not yet enabled in project `hidrosync`.
-- Implication: there is no conflicting production naming baseline to preserve yet; we can define a clean HidroSync-first naming standard from bootstrap.
+- Listing Cloud Run, Artifact Registry, Cloud SQL, Cloud Build triggers, and Cloud Run domain mappings prompted to enable their APIs first, indicating those services are not yet enabled in project `severino`.
+- Implication: there is no conflicting production naming baseline to preserve yet; we can define a clean Severino-first naming standard from bootstrap.
 
 ## Strengths To Keep From Reference
 - **Consistent deployable units**: Cloud Run service name, Artifact Registry repo, and Cloud Build trigger share aligned naming.
@@ -22,7 +22,7 @@
 ## Weaknesses To Fix, Plus Drawbacks Of Fixing
 - **Over-broad IAM in reference** -> use narrower role sets per runtime service account.
   - Drawback: more setup effort; initial deploy troubleshooting can take longer when permissions are too tight.
-- **Region/name inconsistency** -> enforce one region (`us-east4`) and one naming convention (`hidrosync-<component>-<kind>`).
+- **Region/name inconsistency** -> enforce one region (`us-east4`) and one naming convention (`severino-<component>-<kind>`).
   - Drawback: renaming/migrations from ad-hoc names later may require downtime windows or DNS coordination.
 - **Secrets in plain env/substitutions** -> keep this temporary MVP compromise and defer Secret Manager adoption to phase 2.
   - Drawback: higher exposure risk if env values leak in logs/pipelines, and later migration requires coordinated variable rewiring and credential rotation.
@@ -44,35 +44,35 @@ flowchart LR
 ```
 
 ## Terraform Structure To Implement
-- Root infra folder (new): `[infra/terraform](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform)`.
+- Root infra folder (new): `[infra/terraform](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform)`.
 - Environment stack:
-  - `[infra/terraform/envs/dev](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/envs/dev)`
+  - `[infra/terraform/envs/dev](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/envs/dev)`
 - Reusable modules:
-  - `[infra/terraform/modules/project_services](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/project_services)`
-  - `[infra/terraform/modules/artifact_registry](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/artifact_registry)`
-  - `[infra/terraform/modules/network_sql](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/network_sql)`
-  - `[infra/terraform/modules/cloud_run_service](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/cloud_run_service)`
-  - `[infra/terraform/modules/cloud_build_triggers](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/cloud_build_triggers)`
-  - `[infra/terraform/modules/domain_mapping](c:/Users/dirce/OneDrive/CodingProjects/HidroSync/infra/terraform/modules/domain_mapping)
+  - `[infra/terraform/modules/project_services](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/project_services)`
+  - `[infra/terraform/modules/artifact_registry](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/artifact_registry)`
+  - `[infra/terraform/modules/network_sql](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/network_sql)`
+  - `[infra/terraform/modules/cloud_run_service](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/cloud_run_service)`
+  - `[infra/terraform/modules/cloud_build_triggers](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/cloud_build_triggers)`
+  - `[infra/terraform/modules/domain_mapping](c:/Users/dirce/OneDrive/CodingProjects/Severino/infra/terraform/modules/domain_mapping)
 `
 
 ## Naming Convention (Adapted To Current GCP State)
-- Prefix all resources with `hidrosync`.
+- Prefix all resources with `severino`.
 - Use `<product>-<service>-<kind>-<env>` for uniqueness and readability.
 - Phase-1 concrete names:
-  - Cloud Run: `hidrosync-service-dev`, `redirect-service-dev`
-  - Artifact Registry repos: `hidrosync-service`, `redirect-service`
-  - Cloud SQL instance: `hidrosync-sql-dev`
-  - Cloud SQL DBs (single instance multi-db): `hidrosync_service`, `redirect_service`
-  - Service accounts: `hidrosync-service-runtime-dev`, `redirect-service-runtime-dev`, `hidrosync-cloudbuild-deployer-dev`
+  - Cloud Run: `severino-service-dev`, `redirect-service-dev`
+  - Artifact Registry repos: `severino-service`, `redirect-service`
+  - Cloud SQL instance: `severino-sql-dev`
+  - Cloud SQL DBs (single instance multi-db): `hidrosync-service`, `redirect_service`
+  - Service accounts: `severino-service-runtime-dev`, `redirect-service-runtime-dev`, `severino-cloudbuild-deployer-dev`
 
 ## Implementation Steps
 1. Define global naming/label convention and shared variables (`project_id`, `project_number`, `region`, `domain`, `env`).
 2. Bootstrap APIs first (`run`, `artifactregistry`, `cloudbuild`, `sqladmin`, `servicenetworking`, `secretmanager` optional/deferred, and dependencies) and verify they are enabled before creating dependent resources.
-3. Provision Artifact Registry repos for `hidrosync-service` and `redirect-service`.
+3. Provision Artifact Registry repos for `severino-service` and `redirect-service`.
 4. Provision VPC + private service access + one Cloud SQL PostgreSQL instance for dev.
 5. Create separate Cloud SQL databases per service in that instance (per your selection).
-6. Provision Cloud Run services (`hidrosync-service` + `redirect-service`) with env-specific scaling/resources and Cloud SQL mounts only where needed.
+6. Provision Cloud Run services (`severino-service` + `redirect-service`) with env-specific scaling/resources and Cloud SQL mounts only where needed.
 7. Configure domain mappings for public endpoints (app and redirect).
 8. Create dev-only tag-based Cloud Build triggers for both services.
 9. Keep local Terraform state for bootstrap (your choice), but prepare migration note to GCS backend before team scaling.
@@ -93,8 +93,8 @@ flowchart LR
   - Re-run Phase B apply once after first deploy to reconcile any eventual-consistency IAM/API delays.
 
 ## Tag/Release Strategy (Cloud Build)
-- Keep tag deploy model from reference, but with HidroSync naming:
-  - `hidrosync-service-dev-vX.Y.Z`
+- Keep tag deploy model from reference, but with Severino naming:
+  - `severino-service-dev-vX.Y.Z`
   - `redirect-service-dev-vX.Y.Z`
 - Each trigger points to the service-specific `cloudbuild.yaml` and receives env substitutions.
 

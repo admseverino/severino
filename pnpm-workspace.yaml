@@ -1,3 +1,4 @@
 packages:
   - "packages/*"
-  - "hidrosync-service"
+  - "severino-service"
+  - "severino-webhook"

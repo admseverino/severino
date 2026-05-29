@@ -1,13 +1,13 @@
 {
-  "name": "hidrosync-monorepo",
+  "name": "severino-monorepo",
   "private": true,
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "db:generate": "pnpm --filter @hidrosync/db run generate",
-    "db:migrate": "pnpm --filter @hidrosync/db run migrate:db",
-    "db:check": "pnpm --filter @hidrosync/db run check",
+    "db:generate": "pnpm --filter @severino/db run generate",
+    "db:migrate": "pnpm --filter @severino/db run migrate:db",
+    "db:check": "pnpm --filter @severino/db run check",
     "create-superadmin": "node scripts/create-superadmin.js"
   },
   "devDependencies": {

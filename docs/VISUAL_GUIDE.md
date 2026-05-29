@@ -1,4 +1,4 @@
-# HIDROSYNC — Visual & UI Reference
+# SEVERINO — Visual & UI Reference
 
 **Use this document whenever you create or modify a new feature, page, or interface.** It is the single source of truth for colors, radius, typography, and component patterns so all UIs stay consistent and on-brand.
 
@@ -9,7 +9,7 @@
 When building a new page or component:
 1. **Reference this file** (e.g. `@docs/VISUAL_GUIDE.md`) so your output follows the same aesthetics.
 2. Prefer the **exact class names and values** listed below over inventing new ones.
-3. **HIDROSYNC brand colors** (`hidrostone`, `hidrogray`, `quicksilver`, `hidrogreen`) are defined in `app/globals.css` and `tailwind.config.ts`; use them by name.
+3. **SEVERINO brand colors** (`severinostone`, `severinogray`, `quicksilver`, `severinogreen`) are defined in `app/globals.css` and `tailwind.config.ts`; use them by name.
 
 ---
 
@@ -29,18 +29,18 @@ Use these for backgrounds, text, borders, and states. They are in `hsl(var(--…
 | Borders / inputs | —                  | —                        | `border-border`, `border-input`  |
 | Destructive    | `bg-destructive`     | `text-destructive-foreground` | Delete, danger actions   |
 
-### HIDROSYNC brand (main app)
+### SEVERINO brand (main app)
 
 Defined in `app/globals.css` and exposed in Tailwind. **Use these for brand presence**, not for generic grays.
 
 | Name         | Tailwind class   | Hex        | Use for                                |
 |--------------|------------------|------------|----------------------------------------|
-| Hidro Stone | `hidrostone`    | `#424242`  | Dark accents, badges, strong text      |
-| Hidro Gray  | `hidrogray`     | `#A8ABAC`  | Secondary brand elements               |
+| Hidro Stone | `severinostone`    | `#424242`  | Dark accents, badges, strong text      |
+| Hidro Gray  | `severinogray`     | `#A8ABAC`  | Secondary brand elements               |
 | Quicksilver  | `quicksilver`    | `#EFEFEF`  | Light backgrounds, dividers            |
-| Hidro Greenish | `hidrogreen`      | `#27ac97`  | CTAs, highlights, links (accent)       |
+| Hidro Greenish | `severinogreen`      | `#27ac97`  | CTAs, highlights, links (accent)       |
 
-**Examples:** `bg-hidrostone text-white`, `text-hidrogreen`, `bg-quicksilver`, `border-hidrogreen`.
+**Examples:** `bg-severinostone text-white`, `text-severinogreen`, `bg-quicksilver`, `border-severinogreen`.
 
 ### Neutral grays (when not using semantic/brand)
 
@@ -96,7 +96,7 @@ Example:
 
 ### Brand accent
 
-- Use `bg-hidrostone text-white` or `bg-hidrogreen text-white` with `rounded-[4px]` when the button should feel clearly “HIDROSYNC” (e.g. badges, key CTAs).
+- Use `bg-severinostone text-white` or `bg-severinogreen text-white` with `rounded-[4px]` when the button should feel clearly “SEVERINO” (e.g. badges, key CTAs).
 
 ---
 
@@ -126,7 +126,7 @@ Example:
 ## 8. Global constraints
 
 - **Light mode only:** The main app forces light mode (`color-scheme: light only`, white background). Do not rely on dark mode for new features in the main app unless the product direction changes.
-- **Accessibility:** Keep contrast sufficient; primary actions use `text-black` on white or `text-white` on `hidrostone`/`hidrogreen`.
+- **Accessibility:** Keep contrast sufficient; primary actions use `text-black` on white or `text-white` on `severinostone`/`severinogreen`.
 
 ---
 
@@ -136,6 +136,6 @@ Example:
 - [ ] Text: `text-foreground` or `text-black` with `text-muted-foreground` for secondary
 - [ ] Radius: `rounded-[4px]` for buttons, cards, inputs, thumbnails
 - [ ] Buttons: primary = white + black text + `rounded-[4px]`; secondary = gray-100/200
-- [ ] Brand: use `hidrostone`, `hidrogray`, `quicksilver`, `hidrogreen` where appropriate
+- [ ] Brand: use `severinostone`, `severinogray`, `quicksilver`, `severinogreen` where appropriate
 - [ ] Font: Chivo (body default from layout); bold/uppercase for main CTAs
 
