@@ -11,7 +11,7 @@
     "start": "sh scripts/run-prod.sh",
     "start:ingest": "sh scripts/run-prod.sh ingest",
     "start:worker": "sh scripts/run-prod.sh worker",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@google-cloud/pubsub": "^4.11.0",
@@ -24,6 +24,9 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.17.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^8.57.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   },
