@@ -65,10 +65,12 @@ function create_and_push_tag() {
     fi
 }
 
-# Define the deployment commands (these pass through the bump type argument)
-alias deployfront='create_and_push_tag front'
-alias deploydash='create_and_push_tag dash'
-alias deploywebhook='create_and_push_tag webhook'
-alias deploydatabase='create_and_push_tag database'
+# Deployment commands (functions work in bash and zsh; pass bump type as 2nd arg)
+deployfront() { create_and_push_tag front "$@"; }
+deploydash() { create_and_push_tag dash "$@"; }
+deploywebhook() { create_and_push_tag webhook "$@"; }
+deploydatabase() { create_and_push_tag database "$@"; }
 
-export -f create_and_push_tag # Export function for sub-shells if necessary
+if [ -n "${BASH_VERSION:-}" ]; then
+    export -f create_and_push_tag deployfront deploydash deploywebhook deploydatabase
+fi
