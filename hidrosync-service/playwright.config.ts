@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test'
 // Load `hidrosync-service/.env*` the same way Next does (DATABASE_URL, NEXTAUTH_SECRET, …).
 loadEnvConfig(path.resolve(process.cwd()))
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3100'
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4000'
 // NextAuth rejects mismatched origin; keep in sync with the Playwright base URL / dev server port.
 process.env.NEXTAUTH_URL = baseURL
 // Onboarding tests assert exact row counts → keep the deterministic mock extractor unless the
@@ -29,7 +29,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: startWebServer
     ? {
-        command: 'pnpm exec next dev -H 127.0.0.1 -p 3100',
+        command: 'pnpm exec next dev -H 127.0.0.1 -p 4000',
         cwd: path.resolve(process.cwd()),
         url: baseURL,
         reuseExistingServer: !process.env.CI,

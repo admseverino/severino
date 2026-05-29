@@ -12,7 +12,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-chivo)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
