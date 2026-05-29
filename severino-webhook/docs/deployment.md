@@ -38,7 +38,8 @@ Meta ──▶ severino-webhook-ingest (Cloud Run, public)
 IAM essentials:
 
 - `severino-sa@` → `roles/run.admin`, `roles/iam.serviceAccountUser`, `roles/cloudsql.client`,
-  `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor`, `roles/pubsub.publisher`.
+  `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor`, `roles/pubsub.publisher`,
+  `roles/pubsub.editor` (create/update topics and subscriptions during deploy).
 - `severino-sa@` → `roles/run.invoker` on `severino-webhook-worker` (Pub/Sub push OIDC uses the
   same SA as the worker runtime).
 

@@ -147,7 +147,8 @@ gcloud iam service-accounts create severino-sa \
   --project=$PROJECT --display-name="severino-sa"
 
 for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/cloudsql.client \
-            roles/artifactregistry.writer roles/secretmanager.secretAccessor roles/pubsub.publisher; do
+            roles/artifactregistry.writer roles/secretmanager.secretAccessor \
+            roles/pubsub.publisher roles/pubsub.editor; do
   gcloud projects add-iam-policy-binding $PROJECT \
     --member="serviceAccount:${SA}" --role="$ROLE"
 done
