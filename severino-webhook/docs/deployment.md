@@ -31,21 +31,16 @@ Meta ──▶ severino-webhook-ingest (Cloud Run, public)
 | Pub/Sub topic | `whatsapp-events` | decouples ingest from processing |
 | Pub/Sub subscription | `whatsapp-events-push` | push → worker URL, with OIDC token |
 | Pub/Sub topic | `whatsapp-events-dlq` | dead-letter after max attempts |
-| Service account | `webhook-ingest@…` | publishes to the topic |
-| Service account | `webhook-worker@…` | Cloud SQL client; invoked by Pub/Sub |
-| Service account | `pubsub-pusher@…` | identity Pub/Sub uses to call the worker (OIDC) |
+| Service account | `severino-sa@…` | Cloud Build deployer, Cloud Run runtime (ingest + worker), Pub/Sub OIDC push |
 | Cloud Scheduler job | `whatsapp-reconcile` | re-publishes stranded `whatsapp_events` |
 | Secret Manager | see below | app secret, verify token |
 
 IAM essentials:
 
-- `webhook-ingest@` → `roles/pubsub.publisher` on `whatsapp-events`.
-- `pubsub-pusher@` → `roles/run.invoker` on `severino-webhook-worker`; set as the push
-  subscription's OIDC service account with audience = worker URL.
-- `webhook-worker@` → `roles/cloudsql.client` (Cloud SQL connector), and it is the run identity of
-  the worker.
-- Cloud Build SA → `roles/run.admin`, `roles/iam.serviceAccountUser`, `roles/cloudsql.client`
-  (for the migrate step), and Secret Manager accessor.
+- `severino-sa@` → `roles/run.admin`, `roles/iam.serviceAccountUser`, `roles/cloudsql.client`,
+  `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor`, `roles/pubsub.publisher`.
+- `severino-sa@` → `roles/run.invoker` on `severino-webhook-worker` (Pub/Sub push OIDC uses the
+  same SA as the worker runtime).
 
 ## Secrets & env vars
 
@@ -130,7 +125,7 @@ gcloud run deploy severino-webhook-ingest \
   --set-env-vars SERVICE_ROLE=ingest,PUBSUB_TOPIC=whatsapp-events,INSTANCE_CONNECTION_NAME=...,DB_USER=...,DB_PASS=...,DB_NAME=... \
   --set-secrets WHATSAPP_APP_SECRET=...:latest,WHATSAPP_VERIFY_TOKEN=...:latest \
   --add-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
-  --service-account webhook-ingest@$PROJECT.iam.gserviceaccount.com
+  --service-account severino-sa@$PROJECT.iam.gserviceaccount.com
 ```
 
 **Worker (DB-bound, bounded for backpressure):**
@@ -147,7 +142,7 @@ gcloud run deploy severino-webhook-worker \
   --add-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
   --set-env-vars SERVICE_ROLE=worker,PUBSUB_PUSH_AUDIENCE=$WORKER_URL,... \
   --set-env-vars INSTANCE_CONNECTION_NAME=...,DB_USER=...,DB_PASS=...,DB_NAME=... \
-  --service-account webhook-worker@$PROJECT.iam.gserviceaccount.com
+  --service-account severino-sa@$PROJECT.iam.gserviceaccount.com
 ```
 
 **Push subscription (OIDC to the private worker):**
@@ -156,7 +151,7 @@ gcloud run deploy severino-webhook-worker \
 gcloud pubsub subscriptions create whatsapp-events-push \
   --topic whatsapp-events \
   --push-endpoint "$WORKER_URL/pubsub/push" \
-  --push-auth-service-account pubsub-pusher@$PROJECT.iam.gserviceaccount.com \
+  --push-auth-service-account severino-sa@$PROJECT.iam.gserviceaccount.com \
   --dead-letter-topic whatsapp-events-dlq \
   --max-delivery-attempts 10 \
   --ack-deadline 30 \

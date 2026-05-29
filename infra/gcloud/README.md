@@ -16,10 +16,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | Database | `severino-service` |
 | DB user | `postgres` (password in Secret Manager `severino-db-pass`) |
 | Artifact Registry | `us-east4-docker.pkg.dev/severino-project/severino` |
-| Cloud Build deployer SA | `severino-cloudbuild@severino-project.iam.gserviceaccount.com` |
-| Webhook ingest SA | `webhook-ingest@severino-project.iam.gserviceaccount.com` |
-| Webhook worker SA | `webhook-worker@severino-project.iam.gserviceaccount.com` |
-| Pub/Sub pusher SA | `pubsub-pusher@severino-project.iam.gserviceaccount.com` |
+| Service account | `severino-sa@severino-project.iam.gserviceaccount.com` — Cloud Build, Cloud Run runtime, Pub/Sub OIDC |
 
 ## Cloud Build triggers
 
@@ -28,7 +25,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | `severino-database-deploy` | `database-X.Y.Z` | [`cloudbuild.yaml`](../../cloudbuild.yaml) |
 | `severino-webhook-ingest-deploy` | `webhook-X.Y.Z` | [`severino-webhook/cloudbuild.yaml`](../../severino-webhook/cloudbuild.yaml) |
 
-Both triggers use service account `severino-cloudbuild@`.
+Both triggers run as `severino-sa@`.
 
 ## Deploy workflow
 
@@ -53,16 +50,9 @@ Migrations run **only** on the database tag. The webhook pipeline builds the ima
      --project=severino-project --data-file=-
    ```
 
-2. **Pub/Sub → worker IAM** — after the first webhook deploy creates `severino-webhook-worker`:
+2. **Meta App Dashboard** — set callback URL to the ingest Cloud Run URL (`/webhook`).
 
-   ```bash
-   gcloud run services add-iam-policy-binding severino-webhook-worker \
-     --project=severino-project --region=us-east4 \
-     --member="serviceAccount:pubsub-pusher@severino-project.iam.gserviceaccount.com" \
-     --role=roles/run.invoker
-   ```
-
-3. **Meta App Dashboard** — set callback URL to the ingest Cloud Run URL (`/webhook`).
+The webhook pipeline grants `severino-sa` → `run.invoker` on the worker and wires Pub/Sub OIDC automatically.
 
 ## Re-provision from scratch
 
@@ -140,37 +130,28 @@ gcloud artifacts repositories create severino \
   --description="Severino container images"
 ```
 
-### 5. Service accounts + IAM
+### 5. Service account + IAM
+
+Single SA for Cloud Build, Cloud Run runtime, and Pub/Sub OIDC push.
 
 ```bash
 PROJECT=severino-project
-PROJECT_NUM=261525847382
-CB_SA="${PROJECT_NUM}@cloudbuild.gserviceaccount.com"
-DEPLOYER=severino-cloudbuild@${PROJECT}.iam.gserviceaccount.com
+SA=severino-sa@${PROJECT}.iam.gserviceaccount.com
 
-for SA in severino-cloudbuild webhook-ingest webhook-worker pubsub-pusher; do
-  gcloud iam service-accounts create "$SA" --project=$PROJECT --display-name="$SA"
-done
+gcloud iam service-accounts create severino-sa \
+  --project=$PROJECT --display-name="severino-sa"
 
 for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/cloudsql.client \
-            roles/artifactregistry.writer roles/secretmanager.secretAccessor; do
-  for MEMBER in "$DEPLOYER" "$CB_SA"; do
-    gcloud projects add-iam-policy-binding $PROJECT \
-      --member="serviceAccount:${MEMBER}" --role="$ROLE"
-  done
+            roles/artifactregistry.writer roles/secretmanager.secretAccessor roles/pubsub.publisher; do
+  gcloud projects add-iam-policy-binding $PROJECT \
+    --member="serviceAccount:${SA}" --role="$ROLE"
 done
 
-gcloud projects add-iam-policy-binding $PROJECT \
-  --member="serviceAccount:webhook-ingest@${PROJECT}.iam.gserviceaccount.com" \
-  --role=roles/pubsub.publisher
-
-gcloud projects add-iam-policy-binding $PROJECT \
-  --member="serviceAccount:webhook-worker@${PROJECT}.iam.gserviceaccount.com" \
-  --role=roles/cloudsql.client
-
-gcloud projects add-iam-policy-binding $PROJECT \
-  --member="serviceAccount:webhook-ingest@${PROJECT}.iam.gserviceaccount.com" \
-  --role=roles/cloudsql.client
+# Cloud Run deploy attaches severino-sa as runtime identity (same as build SA)
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --project=$PROJECT \
+  --member="serviceAccount:${SA}" \
+  --role=roles/iam.serviceAccountUser
 ```
 
 ### 6. Secrets
@@ -189,7 +170,7 @@ echo -n 'REPLACE' | gcloud secrets create whatsapp-verify-token \
 ### 7. Cloud Build triggers
 
 ```bash
-DEPLOYER_SA="projects/severino-project/serviceAccounts/severino-cloudbuild@severino-project.iam.gserviceaccount.com"
+SA_RESOURCE="projects/severino-project/serviceAccounts/severino-sa@severino-project.iam.gserviceaccount.com"
 
 gcloud builds triggers create github \
   --project=severino-project \
@@ -197,7 +178,7 @@ gcloud builds triggers create github \
   --repo-name=severino --repo-owner=admseverino \
   --tag-pattern='^database-\d+\.\d+\.\d+$' \
   --build-config=cloudbuild.yaml \
-  --service-account="$DEPLOYER_SA" \
+  --service-account="$SA_RESOURCE" \
   --substitutions=_INSTANCE_CONNECTION_NAME=severino-project:us-east4:severino-sql,\
 _DB_USER=postgres,_DB_PASS=DB_PASS,_DB_NAME=severino-service
 
@@ -207,13 +188,10 @@ gcloud builds triggers create github \
   --repo-name=severino --repo-owner=admseverino \
   --tag-pattern='^webhook-\d+\.\d+\.\d+$' \
   --build-config=severino-webhook/cloudbuild.yaml \
-  --service-account="$DEPLOYER_SA" \
+  --service-account="$SA_RESOURCE" \
   --substitutions=_REGION=us-east4,_AR_REPO=severino,\
 _INSTANCE_CONNECTION_NAME=severino-project:us-east4:severino-sql,\
 _DB_USER=postgres,_DB_PASS=DB_PASS,_DB_NAME=severino-service,\
-_INGEST_SA=webhook-ingest@severino-project.iam.gserviceaccount.com,\
-_WORKER_SA=webhook-worker@severino-project.iam.gserviceaccount.com,\
-_PUBSUB_PUSHER_SA=pubsub-pusher@severino-project.iam.gserviceaccount.com,\
 _SECRET_WHATSAPP_APP_SECRET=whatsapp-app-secret,\
 _SECRET_WHATSAPP_VERIFY_TOKEN=whatsapp-verify-token
 ```
@@ -235,5 +213,15 @@ worker.max_instances × db.pool.max  <  cloud_sql.max_connections − headroom
 ## MVP compromises (phase-2 backlog)
 
 - DB password passed as Cloud Build trigger substitution `_DB_PASS` (also stored in Secret Manager `severino-db-pass`). Wire Secret Manager into triggers later.
+- Single shared SA (`severino-sa`) for build + runtime — split per service when moving to prod.
 - Cloud SQL deletion protection not enabled yet.
 - Cloud Scheduler reconcile job (`whatsapp-reconcile`) not provisioned.
+
+## Legacy service accounts
+
+These were replaced by `severino-sa` and can be deleted once confirmed unused:
+
+- `severino-cloudbuild@`
+- `webhook-ingest@`
+- `webhook-worker@`
+- `pubsub-pusher@`

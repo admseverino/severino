@@ -7,7 +7,7 @@
 #   _DB_USER, _DB_PASS — Postgres user/password
 #   _DB_NAME — database name (e.g. severino-service)
 #
-# IAM: Cloud Build service account needs roles/cloudsql.client.
+# IAM: severino-sa@ needs roles/cloudsql.client (Cloud Build runs as severino-sa).
 #
 # Root `.env` is not used in CI; DATABASE_URL is built from substitutions below.
 
