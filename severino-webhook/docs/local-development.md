@@ -117,14 +117,40 @@ Re-run `pubsub:wire-local` whenever the tunnel URL changes (ngrok free tier rota
 Send a WhatsApp test message. Check local worker logs and query local `whatsapp_events` /
 `whatsapp_messages`. Cloud Run continues processing into Cloud SQL independently.
 
-### Teardown
+### Enable / disable (recommended)
+
+Keep `whatsapp-events-push-local` on GCP permanently and toggle delivery:
+
+| When | Command |
+|------|---------|
+| Start local dev | `WORKER_TUNNEL_URL=https://… pnpm run pubsub:enable-local` |
+| Stop for the day | `pnpm run pubsub:disable-local` |
+| Remove entirely | `pnpm run pubsub:teardown-local` |
+
+**Disable** clears the push endpoint (`--push-endpoint=""`). Pub/Sub switches the subscription
+to pull mode — messages **queue on GCP** with no failed pushes to a dead ngrok URL. **Enable**
+sets the tunnel URL again; queued messages are delivered when the local worker is up.
+
+Prod `whatsapp-events-push` is never modified.
+
+One-time setup (creates the subscription if missing):
+
+```bash
+WORKER_TUNNEL_URL=https://YOUR-TUNNEL-HOST \
+  pnpm --filter severino-webhook run pubsub:enable-local
+```
+
+Pause when done:
+
+```bash
+pnpm --filter severino-webhook run pubsub:disable-local
+```
+
+Permanent removal:
 
 ```bash
 pnpm --filter severino-webhook run pubsub:teardown-local
 ```
-
-This deletes only `whatsapp-events-push-local`. Prod ingest, worker, and `whatsapp-events-push`
-are not modified.
 
 
 Meta requires a public HTTPS URL with a valid certificate (self-signed is rejected). For local

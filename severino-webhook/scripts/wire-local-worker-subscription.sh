@@ -1,5 +1,6 @@
 #!/bin/sh
-# Wire a dev-only Pub/Sub push subscription to a tunneled local worker.
+# Enable (resume) the dev push subscription → tunneled local worker.
+# Creates the subscription on first run; later runs only update the push endpoint.
 # Does NOT modify whatsapp-events-push (Cloud Run worker).
 set -eu
 
@@ -45,3 +46,5 @@ else
     --message-retention-duration=7d
   echo "Created $SUB (fan-out with $PROD_SUB on topic $TOPIC)"
 fi
+
+echo "To pause without deleting: pnpm run pubsub:disable-local"

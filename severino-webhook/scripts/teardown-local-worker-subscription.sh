@@ -18,3 +18,4 @@ fi
 
 gcloud pubsub subscriptions delete "$SUB" --project="$PROJECT" --quiet
 echo "Deleted $SUB (prod $PROD_SUB unchanged)"
+echo "Tip: use pubsub:disable-local to pause instead of deleting, if you will resume soon."
