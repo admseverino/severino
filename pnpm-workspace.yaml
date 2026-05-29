@@ -12,3 +12,4 @@ allowBuilds:
   "@swc/core": true
   sharp: true
   unrs-resolver: true
+  protobufjs: true
