@@ -279,9 +279,4 @@ worker.max_instances × db.pool.max  <  cloud_sql.max_connections − headroom
 
 ## Legacy service accounts
 
-These were replaced by `severino-sa` and can be deleted once confirmed unused:
-
-- `severino-cloudbuild@`
-- `webhook-ingest@`
-- `webhook-worker@`
-- `pubsub-pusher@`
+Removed (replaced by `severino-sa`): `severino-cloudbuild@`, `webhook-ingest@`, `webhook-worker@`, `pubsub-pusher@`.
