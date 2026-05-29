@@ -17,7 +17,6 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | DB user | `postgres` (password in Secret Manager `severino-db-pass`) |
 | Artifact Registry | `us-east4-docker.pkg.dev/severino-project/severino` |
 | Service account | `severino-sa@severino-project.iam.gserviceaccount.com` — Cloud Build, Cloud Run runtime, Pub/Sub OIDC |
-| Cloud Build worker pool | `severino-build` (`us-east4`, optional — only for regional `gcloud builds submit --region=us-east4`) |
 
 ## Cloud Build triggers
 
@@ -25,6 +24,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 |---|---|---|
 | `severino-database-deploy` | `database-X.Y.Z` | [`cloudbuild.yaml`](../../cloudbuild.yaml) |
 | `severino-webhook-deploy` | `webhook-X.Y.Z` | [`severino-webhook/cloudbuild.yaml`](../../severino-webhook/cloudbuild.yaml) |
+| `severino-service-deploy` | `service-X.Y.Z` | [`severino-service/cloudbuild.yaml`](../../severino-service/cloudbuild.yaml) |
 
 Both triggers run as `severino-sa@` (global triggers — 1st-gen GitHub connection).
 
@@ -38,6 +38,9 @@ git tag database-1.0.0 && git push origin database-1.0.0
 
 # 2. Deploy webhook (ingest + worker)
 git tag webhook-1.0.0 && git push origin webhook-1.0.0
+
+# 3. Deploy main app
+git tag service-1.0.0 && git push origin service-1.0.0
 ```
 
 Migrations run **only** on the database tag. The webhook pipeline builds the image and deploys Cloud Run ingest + worker without migrating.
@@ -192,27 +195,9 @@ gcloud sql instances patch severino-sql \
 
 Cloud Run services keep using `--add-cloudsql-instances` (private connector, private IP `10.132.0.3`).
 
-### 5c. Private worker pool (optional, regional builds only)
+### 5c. Private worker pool (not used)
 
-Only needed if you move to **regional** triggers with a 2nd-gen GitHub connection (`gcloud builds connections`). Not compatible with the current global 1st-gen triggers.
-
-```bash
-gcloud compute addresses create severino-build-pool-range \
-  --project=severino-project --global --purpose=VPC_PEERING \
-  --prefix-length=24 --network=severino-vpc
-
-gcloud services vpc-peerings update \
-  --project=severino-project --network=severino-vpc \
-  --service=servicenetworking.googleapis.com \
-  --ranges=severino-vpc-peering-range,severino-build-pool-range --force
-
-gcloud builds worker-pools create severino-build \
-  --project=severino-project --region=us-east4 \
-  --peered-network=projects/severino-project/global/networks/severino-vpc \
-  --peered-network-ip-range=/28 \
-  --worker-machine-type=e2-medium \
-  --public-egress
-```
+Deleted `severino-build`. Default Cloud Build workers are sufficient with Cloud SQL public IP for migrations. Only recreate if you move to private-IP-only SQL **and** regional triggers with a 2nd-gen GitHub connection.
 
 ### 6. Secrets
 

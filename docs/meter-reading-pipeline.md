@@ -60,7 +60,7 @@ When offline, steps 5â€“6 happen against IndexedDB instead of GCS, and steps 7â€
 A URL of the form:
 
 ```text
-https://app.severino.com.br/r/<meter_id>
+https://severi.no/r/<meter_id>
 ```
 
 Where `<meter_id>` is the meter's UUID. Encoding a URL (not just an opaque ID) means **any phone QR scanner** opens the right page; we don't need our own scanner app for the QR step. When the URL is opened in Severino, it lands on the reading flow.

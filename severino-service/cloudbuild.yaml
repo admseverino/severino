@@ -1,0 +1,85 @@
+# severino-service — Next.js app on Cloud Run
+#
+# Trigger: severino-service-deploy (tag service-X.Y.Z)
+#
+# Migrations run via severino-database-deploy (tag database-X.Y.Z), not this pipeline.
+#
+# Trigger substitutions:
+#   _REGION, _AR_REPO, _IMAGE_NAME
+#   _INSTANCE_CONNECTION_NAME, _DB_USER, _DB_PASS, _DB_NAME
+#   _NEXTAUTH_URL — public app URL (e.g. https://severi.no)
+#   _SECRET_NEXTAUTH_SECRET — Secret Manager secret name
+#
+# Cloud Run runtime: severino-sa@$PROJECT_ID
+
+substitutions:
+  _REGION: us-east4
+  _AR_REPO: severino
+  _IMAGE_NAME: severino-service
+  _SERVICE: severino-service
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - id: install
+    name: node:22-bookworm
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        corepack enable
+        corepack prepare pnpm@9.15.4 --activate
+        pnpm install --frozen-lockfile
+
+  - id: build-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest
+      - -f
+      - severino-service/Dockerfile
+      - .
+
+  - id: push-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        set -euo pipefail
+        IMAGE="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$SHORT_SHA"
+        SA="severino-sa@$PROJECT_ID.iam.gserviceaccount.com"
+
+        DB_ENV="INSTANCE_CONNECTION_NAME=${_INSTANCE_CONNECTION_NAME},DB_USER=${_DB_USER},DB_NAME=${_DB_NAME},DB_PASS=${_DB_PASS}"
+
+        gcloud run deploy "${_SERVICE}" \
+          --project "$PROJECT_ID" \
+          --region "${_REGION}" \
+          --image "$$IMAGE" \
+          --platform managed \
+          --allow-unauthenticated \
+          --service-account "$$SA" \
+          --add-cloudsql-instances "${_INSTANCE_CONNECTION_NAME}" \
+          --concurrency 80 \
+          --min-instances 0 \
+          --max-instances 10 \
+          --cpu 1 \
+          --memory 1Gi \
+          --port 8080 \
+          --set-env-vars "NODE_ENV=production,NEXTAUTH_URL=${_NEXTAUTH_URL},GCP_PROJECT_ID=$PROJECT_ID,$${DB_ENV}" \
+          --set-secrets "NEXTAUTH_SECRET=${_SECRET_NEXTAUTH_SECRET}:latest"
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_IMAGE_NAME}:latest

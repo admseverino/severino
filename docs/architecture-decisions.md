@@ -140,7 +140,7 @@ meter_scope_resolved(meter_id, unit_id)
 **Conventions:**
 
 - Implementation in `severino-service/components/qr/QrScanner.tsx`. Camera plumbing (`getUserMedia`, frame capture into `<canvas>`, feed to `jsQR`) is bespoke — about 100 lines.
-- Decoded value is always a URL of the form `https://app.severino.com.br/r/<meter_id>`. The component validates the URL shape before navigating; non-Severino QRs show a "not a Severino meter QR" toast.
+- Decoded value is always a URL of the form `https://severi.no/r/<meter_id>`. The component validates the URL shape before navigating; non-Severino QRs show a "not a Severino meter QR" toast.
 - QR **rendering for printing** uses [`qrcode`](https://www.npmjs.com/package/qrcode) on the server (renders to SVG/PNG) — that's a separate library from scanning and stays unchanged.
 
 ---

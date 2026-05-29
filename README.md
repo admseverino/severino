@@ -231,7 +231,7 @@ Configure these in your `.env` file (see `env.example`):
 | `NEXTAUTH_SECRET` | NextAuth.js secret key |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID (optional) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (optional) |
-| `NEXT_PUBLIC_MEDIA_BASE_URL` | Base URL for media served from GCS (e.g. `https://media.severino.com.br/`) |
+| `NEXT_PUBLIC_MEDIA_BASE_URL` | Base URL for media served from GCS (e.g. `https://media.severi.no/`) |
 | `NEXT_PUBLIC_BASE_URL` | Public application URL |
 | `OPENROUTER_API_KEY` | API key for OpenRouter (shared by meter-reader + onboarding-parser) |
 | `OPENROUTER_METER_MODEL` | Vision model for meter-value extraction (default: `google/gemini-2.5-flash`) |
@@ -239,7 +239,7 @@ Configure these in your `.env` file (see `env.example`):
 | `AI_METER_READER` | `openrouter` or `mock` — dev/tests use `mock` |
 | `AI_ONBOARDING_PARSER` | `openrouter` or `mock` — dev/tests use `mock` |
 | `RESEND_API_KEY` | API key for Resend transactional email |
-| `EMAIL_FROM` | Sender address for outgoing email (e.g. `noreply@severino.com.br`) |
+| `EMAIL_FROM` | Sender address for outgoing email (e.g. `noreply@severi.no`) |
 | `SCHEDULER_OIDC_AUDIENCE` | Audience claim Cloud Scheduler signs `/api/scheduler/tick` calls with |
 | `NODE_ENV` | `development` or `production` |
 
@@ -267,7 +267,7 @@ Cloud Build (`severino-service/cloudbuild.yaml`) builds the image, pushes it to 
 
 ### Redirect Service
 
-A lightweight Express server deployed as a Cloud Run service from `redirect-service/`. Issues 301 permanent redirects from `www.severino.com.br` to `severino.com.br` (and any other `www.*` subdomain to its apex equivalent).
+A lightweight Express server deployed as a Cloud Run service from `redirect-service/`. Issues 301 permanent redirects from `www.severi.no` to `severi.no` (and any other `www.*` subdomain to its apex equivalent).
 
 ## Scripts and Migrations
 
