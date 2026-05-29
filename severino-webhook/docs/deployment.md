@@ -89,23 +89,19 @@ FROM node:22-bookworm-slim AS runner
 One image, `SERVICE_ROLE` decides which `server.js` runs — see
 [`module-structure.md`](./module-structure.md).
 
-## `cloudbuild.yaml` (steps)
+## `cloudbuild.yaml` (trigger)
 
-Place `severino-webhook/cloudbuild.yaml`. Steps:
+Trigger: **`severino-webhook-deploy`** — tag `webhook-X.Y.Z` → [`cloudbuild.yaml`](../cloudbuild.yaml)
 
-1. **install** — `corepack` + `pnpm install --frozen-lockfile`.
-2. **db-release** — run migrations **before** deploy, exactly like the root
-   [`cloudbuild.yaml`](../../cloudbuild.yaml): start the Cloud SQL proxy, set `DATABASE_URL`,
-   `pnpm --filter @severino/db run build`, `pnpm run db:migrate`, `pnpm run db:check`. This applies
-   the new `whatsapp_events` / `whatsapp_messages` tables.
-3. **build** — `docker build` the image, push to Artifact Registry.
-4. **deploy-worker** — `gcloud run deploy severino-webhook-worker` (private) first, so its URL
-   exists for the push subscription audience.
-5. **deploy-ingest** — `gcloud run deploy severino-webhook-ingest` (public).
-6. **wire-pubsub** — ensure topic, DLQ, and push subscription (idempotent `gcloud pubsub …`).
+Migrations run separately via `severino-database-deploy` (`database-X.Y.Z`).
 
-> Migrations live in `@severino/db`; this pipeline just runs the shared `db:migrate` script. Do
-> not duplicate schema here.
+Steps:
+
+1. **install** — `pnpm install --frozen-lockfile`.
+2. **build** / **push** — Docker image to Artifact Registry.
+3. **deploy-worker** — private Cloud Run service + `PUBSUB_PUSH_AUDIENCE`.
+4. **wire-pubsub** — topics, DLQ, push subscription (OIDC → worker URL).
+5. **deploy-ingest** — public Cloud Run service with WhatsApp secrets.
 
 ## `gcloud run deploy` flags (the knobs that matter)
 

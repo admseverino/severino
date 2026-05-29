@@ -24,7 +24,7 @@ Naming convention: flat `severino-<component>` (no env suffix).
 | Trigger | Tag pattern | Config |
 |---|---|---|
 | `severino-database-deploy` | `database-X.Y.Z` | [`cloudbuild.yaml`](../../cloudbuild.yaml) |
-| `severino-webhook-ingest-deploy` | `webhook-X.Y.Z` | [`severino-webhook/cloudbuild.yaml`](../../severino-webhook/cloudbuild.yaml) |
+| `severino-webhook-deploy` | `webhook-X.Y.Z` | [`severino-webhook/cloudbuild.yaml`](../../severino-webhook/cloudbuild.yaml) |
 
 Both triggers run as `severino-sa@` (global triggers — 1st-gen GitHub connection).
 
@@ -36,7 +36,7 @@ Both triggers run as `severino-sa@` (global triggers — 1st-gen GitHub connecti
 # 1. Push code changes, then run migrations
 git tag database-1.0.0 && git push origin database-1.0.0
 
-# 2. After database build succeeds, deploy webhook
+# 2. Deploy webhook (ingest + worker)
 git tag webhook-1.0.0 && git push origin webhook-1.0.0
 ```
 
@@ -243,7 +243,7 @@ _DB_USER=postgres,_DB_PASS=DB_PASS,_DB_NAME=severino-service
 
 gcloud builds triggers create github \
   --project=severino-project \
-  --name=severino-webhook-ingest-deploy \
+  --name=severino-webhook-deploy \
   --repo-name=severino --repo-owner=admseverino \
   --tag-pattern='^webhook-\d+\.\d+\.\d+$' \
   --build-config=severino-webhook/cloudbuild.yaml \

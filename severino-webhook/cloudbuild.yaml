@@ -1,8 +1,10 @@
-# severino-webhook — Cloud Run (ingest + worker from one image)
+# severino-webhook — deploy ingest + worker from one image.
+#
+# Trigger: severino-webhook-deploy (tag webhook-X.Y.Z)
 #
 # Migrations run via severino-database-deploy (tag database-X.Y.Z), not this pipeline.
 #
-# Trigger substitutions (set on the Cloud Build trigger):
+# Trigger substitutions:
 #   _REGION                    — e.g. us-east4
 #   _AR_REPO                   — Artifact Registry repo name
 #   _IMAGE_NAME                — e.g. severino-webhook
