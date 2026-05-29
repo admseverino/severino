@@ -1,6 +1,6 @@
 /**
  * Apply Drizzle migrations (no Next.js build-time pool guard).
- * Loads **only** the repo-root `.env` for this process (see `loadMigrateEnvFromRepoRoot`).
+ * Local dev: loads repo-root `.env`. CI: uses pre-exported `DATABASE_URL`.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -60,10 +60,14 @@ function parseEnvFile(filePath: string): Record<string, string> {
 }
 
 /**
- * Only `migrate:db` uses the repo-root `.env` for DB connection vars.
- * Overrides `DATABASE_URL` / `DATABASE_SSL` from that file so a shell or other `.env` does not win.
+ * Local dev: load repo-root `.env` for DB connection vars.
+ * CI (Cloud Build): `DATABASE_URL` is exported before invoke — skip `.env`.
  */
 function loadMigrateEnvFromRepoRoot(): void {
+  if (process.env.DATABASE_URL?.trim()) {
+    return
+  }
+
   const rootDir = getMonorepoRootDir(__dirname)
   const envPath = path.join(rootDir, '.env')
 
