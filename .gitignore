@@ -1,40 +1,42 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnpm-store/
+.pnp
 .pnp.js
-packages/**/node_modules
 
+# reference / local only
 reference-code/
-severino-service/node_modules
 
 # testing
-/coverage
-severino-service/playwright-report/
-severino-service/test-results/
+coverage/
+playwright-report/
+test-results/
 
 # next.js
-/.next/
-/out/
-severino-service/.next/
-severino-service/out/
+.next/
+out/
 
 # turbo / build
 .turbo/
-packages/db/dist/
-
-# production
-/build
+dist/
+build/
 
 # misc
 .DS_Store
+.!*!*
 *.pem
+Thumbs.db
+*.swp
+*~
 
-# debug
+# debug / logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
 
 # local env files
 .env*.local
@@ -43,5 +45,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-severino-service/*.tsbuildinfo
-severino-service/next-env.d.ts
+
+# cache / temp
+.cache/
+*.eslintcache
+.swc/
+.vercel/
+tmp/
+temp/
