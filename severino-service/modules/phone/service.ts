@@ -207,3 +207,21 @@ export async function getVerifiedPhone(userId: string): Promise<{
     phoneVerifiedAt: row?.phoneVerifiedAt ?? null,
   }
 }
+
+export async function removeVerifiedPhone(userId: string): Promise<void> {
+  const verified = await getVerifiedPhone(userId)
+  if (!verified.phoneE164 || !verified.phoneVerifiedAt) {
+    throw new PhoneVerificationError('Nenhum telefone verificado para remover.', 404)
+  }
+
+  await db()
+    .update(users)
+    .set({
+      phoneE164: null,
+      phoneVerifiedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+
+  await db().delete(phoneVerificationTokens).where(eq(phoneVerificationTokens.userId, userId))
+}

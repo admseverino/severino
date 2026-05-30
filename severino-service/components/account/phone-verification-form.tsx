@@ -1,8 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 import { QrSvg } from '@/components/qr/QrSvg'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +22,7 @@ interface PhoneVerificationFormProps {
   initialPhoneE164: string | null
   initialPhoneVerifiedAt: string | null
   onVerified: (phoneE164: string, phoneVerifiedAt: string) => void
+  onRemoved?: () => void
 }
 
 interface VerificationChallenge {
@@ -26,6 +38,7 @@ export function PhoneVerificationForm({
   initialPhoneE164,
   initialPhoneVerifiedAt,
   onVerified,
+  onRemoved,
 }: PhoneVerificationFormProps): React.JSX.Element {
   const [manualPhone, setManualPhone] = useState(initialPhoneE164 ?? '')
   const [code, setCode] = useState('')
@@ -34,6 +47,7 @@ export function PhoneVerificationForm({
   const [error, setError] = useState<string | null>(null)
   const [manualSendMessage, setManualSendMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
   const [verifiedPhone, setVerifiedPhone] = useState(initialPhoneE164)
   const [verifiedAt, setVerifiedAt] = useState(initialPhoneVerifiedAt)
 
@@ -217,6 +231,30 @@ export function PhoneVerificationForm({
     setManualSendMessage(null)
   }
 
+  async function handleRemovePhone(): Promise<void> {
+    setError(null)
+    setLoading(true)
+    try {
+      const res = await fetch('/api/user/phone', { method: 'DELETE' })
+      const data: unknown = await res.json()
+      const payload = data as { error?: string }
+      if (!res.ok) {
+        setError(payload.error ?? 'Não foi possível remover o telefone.')
+        return
+      }
+
+      setVerifiedPhone(null)
+      setVerifiedAt(null)
+      setManualPhone('')
+      setRemoveDialogOpen(false)
+      onRemoved?.()
+    } catch {
+      setError('Não foi possível remover o telefone.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-4 border-t pt-4">
       <div>
@@ -231,13 +269,41 @@ export function PhoneVerificationForm({
           className="rounded-[4px] border border-border bg-muted/40 p-3 text-sm"
           data-testid="phone-verified-banner"
         >
-          <p>
-            <span className="text-muted-foreground">Verificado:</span>{' '}
-            <span className="font-medium">{verifiedPhone}</span>
-          </p>
-          <p className="text-xs text-muted-foreground pt-1">
-            Desde {new Date(verifiedAt).toLocaleDateString('pt-BR')}
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p>
+                <span className="text-muted-foreground">Verificado:</span>{' '}
+                <span className="font-medium">{verifiedPhone}</span>
+              </p>
+              <p className="text-xs text-muted-foreground pt-1">
+                Desde {new Date(verifiedAt).toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+            {step === 'idle' ? (
+              <div className="flex shrink-0 items-center gap-4">
+                <button
+                  type="button"
+                  data-testid="phone-request-code"
+                  disabled={loading}
+                  onClick={() => void handleRequestCode()}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                >
+                  <Pencil className="size-4" aria-hidden />
+                  <span>Alterar</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="phone-remove"
+                  disabled={loading}
+                  onClick={() => setRemoveDialogOpen(true)}
+                  className="flex items-center gap-1.5 text-xs text-destructive transition-colors hover:text-destructive/80 disabled:opacity-50"
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                  <span>Remover</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -326,21 +392,46 @@ export function PhoneVerificationForm({
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div className="flex flex-wrap gap-2">
-        {step === 'idle' ? (
+        {step === 'idle' && !verifiedPhone ? (
           <Button
             type="button"
             data-testid="phone-request-code"
             disabled={loading}
             onClick={() => void handleRequestCode()}
           >
-            {loading ? 'Gerando…' : verifiedPhone ? 'Alterar telefone' : 'Enviar código'}
+            {loading ? 'Gerando…' : 'Enviar código'}
           </Button>
-        ) : (
+        ) : step === 'code-sent' ? (
           <Button type="button" variant="outline" disabled={loading} onClick={handleCancel}>
             Cancelar
           </Button>
-        )}
+        ) : null}
       </div>
+
+      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <AlertDialogContent className="rounded-[4px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover telefone?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Seu número {verifiedPhone} será desvinculado da conta. Você deixará de receber
+              mensagens enviadas ao Severino na aba Mensagens até verificar um novo número.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="phone-remove-confirm"
+              disabled={loading}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleRemovePhone()
+              }}
+            >
+              {loading ? 'Removendo…' : 'Remover'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

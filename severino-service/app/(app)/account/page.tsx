@@ -198,6 +198,17 @@ function AccountPageInner(): React.JSX.Element {
                       : current
                   )
                 }}
+                onRemoved={() => {
+                  setMe((current) =>
+                    current
+                      ? {
+                          ...current,
+                          phoneE164: null,
+                          phoneVerifiedAt: null,
+                        }
+                      : current
+                  )
+                }}
               />
 
               <div className="space-y-2 border-t pt-4">
