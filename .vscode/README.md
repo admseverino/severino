@@ -29,7 +29,7 @@ This project uses custom configurations to:
 project-root/
 ├── .vscode/
 │   ├── project_aliases      # Custom deployment commands
-│   ├── tasks.json           # VS Code task automation
+│   ├── .zshrc               # Loads aliases in integrated zsh (via ZDOTDIR)
 │   ├── sessions.json        # Terminal session configs
 │   └── terminals.json       # Terminal layout configs
 │
@@ -71,8 +71,8 @@ deployjob [major|minor|patch]      # Deploy scheduled job
 
 **Default behavior:** If no argument is provided, defaults to `patch`.
 
-#### 2. `tasks.json`
-Defines VS Code tasks, including auto-loading project aliases when the workspace opens.
+#### 2. `settings.json` + `.zshrc`
+Integrated terminals use the **severino zsh** / **severino bash** profile, which loads `project_aliases` on startup. A `runOn: folderOpen` task cannot do this (it runs in a separate shell that exits immediately).
 
 ---
 
@@ -241,18 +241,20 @@ deploydash major
 ## Troubleshooting
 
 ### Aliases not loading
+Aliases load via the **severino zsh** / **severino bash** terminal profile in `settings.json`, not via a folder-open task. Open a **new** integrated terminal after changing settings (or run **Developer: Reload Window**).
+
 ```bash
+# Confirm the workspace default profile is active (should show severino zsh / severino bash)
+echo $ZDOTDIR   # macOS zsh: should end in .vscode
+
 # Check if file exists
 ls -la .vscode/project_aliases
 
-# Check if you're in a Git repo
-git rev-parse --show-toplevel
-
-# Manually source the file
-source .vscode/project_aliases
-
 # Check function exists
-type create_and_push_tag
+type deploydash
+
+# Fallback: manual load
+source .vscode/project_aliases
 ```
 
 ### Rules not appearing in Cursor
@@ -260,12 +262,6 @@ type create_and_push_tag
 2. Check file extensions are `.mdc` (not `.md`)
 3. Verify YAML frontmatter is properly formatted
 4. Restart Cursor
-
-### Permission issues
-```bash
-# Make aliases executable
-chmod +x .vscode/project_aliases
-```
 
 ---
 
@@ -283,7 +279,7 @@ chmod +x .vscode/project_aliases
 
 - [Semantic Versioning 2.0.0](https://semver.org/)
 - [Cursor Documentation](https://cursor.sh/docs)
-- [VS Code Tasks Documentation](https://code.visualstudio.com/docs/editor/tasks)
+- [VS Code Terminal Profiles](https://code.visualstudio.com/docs/terminal/profiles)
 
 ---
 

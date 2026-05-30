@@ -2,21 +2,37 @@
   "task.allowAutomaticTasks": "on",
   "terminal.integrated.defaultProfile.osx": "severino zsh",
   "terminal.integrated.defaultProfile.linux": "severino bash",
+  "terminal.integrated.automationProfile.osx": {
+    "path": "/bin/zsh",
+    "args": ["-il"],
+    "env": {
+      "ZDOTDIR": "${workspaceFolder}/.vscode"
+    }
+  },
+  "terminal.integrated.automationProfile.linux": {
+    "path": "/bin/bash",
+    "args": [
+      "--rcfile",
+      "${workspaceFolder}/.vscode/project_aliases",
+      "-i"
+    ]
+  },
   "terminal.integrated.profiles.osx": {
     "severino zsh": {
       "path": "/bin/zsh",
-      "args": [
-        "-lic",
-        "[ -f \"${workspaceFolder}/.vscode/project_aliases\" ] && source \"${workspaceFolder}/.vscode/project_aliases\"; exec zsh -il"
-      ]
+      "args": ["-il"],
+      "env": {
+        "ZDOTDIR": "${workspaceFolder}/.vscode"
+      }
     }
   },
   "terminal.integrated.profiles.linux": {
     "severino bash": {
       "path": "/bin/bash",
       "args": [
-        "-lic",
-        "[ -f \"${workspaceFolder}/.vscode/project_aliases\" ] && source \"${workspaceFolder}/.vscode/project_aliases\"; exec bash -il"
+        "--rcfile",
+        "${workspaceFolder}/.vscode/project_aliases",
+        "-i"
       ]
     }
   }
