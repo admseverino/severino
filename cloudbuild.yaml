@@ -25,8 +25,8 @@ steps:
       - -ce
       - |
         CACHE_URI="gs://${PROJECT_ID}_cloudbuild/${_PNPM_CACHE_OBJECT}"
-        if gcloud storage objects describe "$CACHE_URI" --project="$PROJECT_ID" >/dev/null 2>&1; then
-          gcloud storage cp "$CACHE_URI" /tmp/pnpm-store.tar.gz
+        if gcloud storage objects describe "$$CACHE_URI" --project="$PROJECT_ID" >/dev/null 2>&1; then
+          gcloud storage cp "$$CACHE_URI" /tmp/pnpm-store.tar.gz
           mkdir -p .pnpm-store
           tar -xzf /tmp/pnpm-store.tar.gz -C .
         fi
