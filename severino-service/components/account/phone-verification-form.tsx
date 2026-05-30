@@ -188,14 +188,19 @@ export function PhoneVerificationForm({
     }
   }
 
-  async function handleVerifyCode(): Promise<void> {
+  async function handleVerifyCode(codeOverride?: string): Promise<void> {
+    const verificationCode = codeOverride ?? code
+    if (verificationCode.length !== 6) {
+      return
+    }
+
     setError(null)
     setLoading(true)
     try {
       const res = await fetch('/api/user/phone/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: manualPhone || undefined, code }),
+        body: JSON.stringify({ phone: manualPhone || undefined, code: verificationCode }),
       })
       const data: unknown = await res.json()
       const payload = data as {
@@ -375,6 +380,16 @@ export function PhoneVerificationForm({
               maxLength={6}
               value={code}
               onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') {
+                  return
+                }
+                event.preventDefault()
+                const nextCode = event.currentTarget.value.replace(/\D/g, '').slice(0, 6)
+                if (!loading && nextCode.length === 6) {
+                  void handleVerifyCode(nextCode)
+                }
+              }}
             />
             <Button
               type="button"
