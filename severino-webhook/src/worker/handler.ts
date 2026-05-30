@@ -30,11 +30,16 @@ const messageStore = new DrizzleMessageStore()
 function parsePubSubMessageData(decoded: string): {
   eventId: ReturnType<typeof asEventId>
   payload?: unknown
+  signature?: string | null
 } {
   const json: unknown = JSON.parse(decoded)
   const mirror = DevMirrorMessageSchema.safeParse(json)
   if (mirror.success) {
-    return { eventId: asEventId(mirror.data.eventId), payload: mirror.data.payload }
+    return {
+      eventId: asEventId(mirror.data.eventId),
+      payload: mirror.data.payload,
+      signature: mirror.data.signature ?? null,
+    }
   }
   const idOnly = EventIdOnlySchema.parse(json)
   return { eventId: asEventId(idOnly.eventId) }
@@ -43,16 +48,19 @@ function parsePubSubMessageData(decoded: string): {
 export async function handlePubSubPush(body: unknown): Promise<void> {
   const envelope = PubSubPushSchema.parse(body)
   const decoded = Buffer.from(envelope.message.data, 'base64').toString('utf8')
-  const { eventId, payload } = parsePubSubMessageData(decoded)
+  const { eventId, payload, signature } = parsePubSubMessageData(decoded)
 
   const deps = { eventStore, messageStore }
 
   if (payload !== undefined) {
-    log.info('processing dev-mirror message (payload inline, no event store lookup)', {
+    log.info('processing dev-mirror message (payload inline, local event stub)', {
       eventId,
       subscription: envelope.subscription,
     })
-    await processWebhookPayload(eventId, payload, deps, { trackInEventStore: false })
+    await processWebhookPayload(eventId, payload, deps, {
+      trackInEventStore: false,
+      signature,
+    })
     return
   }
 

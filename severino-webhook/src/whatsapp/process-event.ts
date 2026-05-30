@@ -11,8 +11,10 @@ export interface ProcessEventDeps {
 }
 
 export interface ProcessPayloadOptions {
-  /** When false, skip whatsapp_events reads/updates (dev mirror with local DB only). */
+  /** When false, dev mirror: stub event row locally, no load from Cloud SQL. */
   trackInEventStore?: boolean
+  /** Used with trackInEventStore=false for ensureEventStub. */
+  signature?: string | null
 }
 
 export async function processWebhookPayload(
@@ -23,23 +25,21 @@ export async function processWebhookPayload(
 ): Promise<void> {
   const track = options.trackInEventStore !== false
 
-  if (track) {
+  if (!track) {
+    await deps.eventStore.ensureEventStub(eventId, payload, options.signature ?? null)
+  } else {
     await deps.eventStore.incrementProcessAttempts(eventId)
   }
 
   const parsed = WhatsAppWebhookBodySchema.safeParse(payload)
   if (!parsed.success) {
     const error = parsed.error.message
-    if (track) {
-      await deps.eventStore.markFailed(eventId, error)
-    }
+    await deps.eventStore.markFailed(eventId, error)
     throw new Error(`Invalid webhook payload: ${error}`)
   }
 
   if (hasOnlyStatusUpdates(parsed.data)) {
-    if (track) {
-      await deps.eventStore.markProcessed(eventId)
-    }
+    await deps.eventStore.markProcessed(eventId)
     log.info('webhook event contained status updates only', { eventId, trackInEventStore: track })
     return
   }
@@ -47,9 +47,7 @@ export async function processWebhookPayload(
   const messages = normalizeWebhookBody(eventId, parsed.data)
   const inserted = await deps.messageStore.upsertMessages(messages)
 
-  if (track) {
-    await deps.eventStore.markProcessed(eventId)
-  }
+  await deps.eventStore.markProcessed(eventId)
 
   log.info('webhook event processed', {
     eventId,

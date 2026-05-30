@@ -15,6 +15,8 @@ export interface StoredWebhookEvent {
 
 export interface EventStore {
   insertRaw(input: RawEventInput): Promise<EventId>
+  /** Local dev mirror: satisfy whatsapp_messages FK without reading Cloud SQL. */
+  ensureEventStub(eventId: EventId, payload: unknown, signature: string | null): Promise<void>
   loadById(eventId: EventId): Promise<StoredWebhookEvent | null>
   incrementProcessAttempts(eventId: EventId): Promise<void>
   markProcessed(eventId: EventId): Promise<void>
