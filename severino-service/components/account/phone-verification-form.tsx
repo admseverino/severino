@@ -309,24 +309,18 @@ export function PhoneVerificationForm({
 
       {step === 'code-sent' && challenge ? (
         <div
-          className="space-y-4 rounded-[4px] border border-border bg-muted/20 p-4"
+          className="rounded-[4px] border border-border bg-muted/20 p-4"
           data-testid="phone-verification-qr"
         >
-          <div>
-            <p className="font-medium">Escaneie este QR code</p>
-            <p className="text-sm text-muted-foreground">
-              Envie para <span className="font-medium">{challenge.whatsappPhoneE164}</span> a
-              mensagem com o código gerado usando o WhatsApp do número que você quer verificar.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <QrSvg
-              svg={challenge.qrSvg}
-              alt="QR code para verificar telefone no WhatsApp"
-              className="h-40 w-40 rounded-[4px] border border-border bg-white p-2"
-            />
-            <div className="space-y-3 text-sm">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3 text-sm sm:flex-1 sm:pr-4">
+              <div>
+                <p className="font-medium">Escaneie este QR code</p>
+                <p className="text-muted-foreground">
+                  Envie para <span className="font-medium">{challenge.whatsappPhoneE164}</span> a
+                  mensagem com o código gerado usando o WhatsApp do número que você quer verificar.
+                </p>
+              </div>
               <p className="text-muted-foreground">
                 O QR code já inclui a mensagem pronta para envio. Assim que recebermos a mensagem,
                 a verificação será concluída automaticamente.
@@ -338,6 +332,11 @@ export function PhoneVerificationForm({
               </Button>
               <p className="text-xs text-muted-foreground">Aguardando confirmação…</p>
             </div>
+            <QrSvg
+              svg={challenge.qrSvg}
+              alt="QR code para verificar telefone no WhatsApp"
+              className="h-60 w-60 shrink-0 rounded-[4px] border border-border bg-white p-2"
+            />
           </div>
         </div>
       ) : null}
