@@ -26,7 +26,7 @@ The repository is a monorepo containing the main app, deployed to Google Cloud R
 | Service | Directory | Description |
 |---------|-----------|-------------|
 | Main App | `severino-service/` | Next.js app: onboarding, meters, readings, consumption, billing |
-| WhatsApp Webhook | `severino-webhook/` | Receives WhatsApp Cloud API webhooks (ingest + async worker on Cloud Run) |
+| WhatsApp Webhook | `severino-webhook/` | Receives WhatsApp Cloud API webhooks (ingest + async worker on Cloud Run), links inbound messages to verified users |
 | Redirect | `redirect-service/` | `www.*` → apex 301 redirect (added in phase 2) |
 
 Additional services, jobs, and Cloud Functions can be added later as the platform grows. See [`Infrastructure-plan.md`](./Infrastructure-plan.md) for the GCP/Terraform plan.
@@ -140,7 +140,8 @@ Root (`pnpm` from repo root):
 ```plaintext
 severino/
 ├── packages/
-│   └── db/                       # Workspace package: Drizzle schema + migrations (@severino/db)
+│   ├── db/                       # Workspace package: Drizzle schema + migrations (@severino/db)
+│   └── phone/                    # Workspace package: shared phone/WhatsApp normalization + code parsing (@severino/phone)
 ├── severino-service/            # Main Next.js app (App Router)
 │   ├── app/                      # Routes (route groups: (marketing), (app), api)
 │   ├── components/               # React components (ui/, layout/, …)
@@ -198,6 +199,15 @@ Editors review each period in `/reading`. The system auto-flags implausible delt
 
 Tenants log in to view **every unit they own** across all condos: full historical consumption with the reading photos backing each value. Read-only and unit-scoped. Paid/unpaid status is **not** tracked — that lives in the external billing system.
 
+### WhatsApp Phone Verification and Messages
+
+Users can verify their WhatsApp phone in account settings using:
+
+- QR flow: scan and send the generated code to the project verification number
+- Manual flow: request the platform to send the generated code directly to the user's number
+
+Once verified, inbound WhatsApp messages from that phone are linked to the user and shown in the account **Mensagens** tab.
+
 ### Common-Area Consumption
 
 Each condo can have **N master meters** (e.g. one per tower); common-area consumption is computed per master as `master − Σ(linked submeters)`. Visible to Condo admins and above.
@@ -229,6 +239,9 @@ Configure these in your `.env` file (see `env.example`):
 | `NEXTAUTH_SECRET` | NextAuth.js secret key |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID (optional) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (optional) |
+| `WHATSAPP_VERIFICATION_PHONE_E164` | WhatsApp number used by QR verification flow (defaults to `+5551995969303`) |
+| `WHATSAPP_PHONE_NUMBER_ID` | Meta WhatsApp phone number ID used to send direct verification codes (manual flow) |
+| `WHATSAPP_ACCESS_TOKEN` | Meta Graph API access token used to send direct verification codes (manual flow) |
 | `NEXT_PUBLIC_MEDIA_BASE_URL` | Base URL for media served from GCS (e.g. `https://media.severi.no/`) |
 | `NEXT_PUBLIC_BASE_URL` | Public application URL |
 | `OPENROUTER_API_KEY` | API key for OpenRouter (shared by meter-reader + onboarding-parser) |
@@ -249,7 +262,7 @@ All services are deployed to Google Cloud Run via Cloud Build pipelines. Each se
 
 ### Main App
 
-The Dockerfile uses a three-stage build:
+The Dockerfile uses a three-stage build and includes required workspace packages (`@severino/db`, `@severino/phone`):
 
 1. **deps** — installs npm dependencies (Node.js 20 Alpine + native PostgreSQL build tools)
 2. **builder** — compiles the Next.js app in standalone mode
