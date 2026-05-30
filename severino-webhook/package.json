@@ -12,6 +12,7 @@
     "mirror:off": "sh scripts/dev-mirror-sub.sh off",
     "mirror:status": "sh scripts/dev-mirror-sub.sh status",
     "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test src/**/*.test.ts",
     "start": "sh scripts/run-prod.sh",
     "start:ingest": "sh scripts/run-prod.sh ingest",
     "start:worker": "sh scripts/run-prod.sh worker",
@@ -20,6 +21,7 @@
   "dependencies": {
     "@google-cloud/pubsub": "^4.11.0",
     "@severino/db": "workspace:*",
+    "@severino/phone": "workspace:*",
     "drizzle-orm": "^0.45.1",
     "express": "^4.21.2",
     "google-auth-library": "^9.15.1",

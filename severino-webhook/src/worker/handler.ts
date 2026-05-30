@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { DrizzleEventStore } from '../adapters/drizzle-event-store.js'
 import { DrizzleMessageStore } from '../adapters/drizzle-message-store.js'
+import { DrizzlePhoneVerificationProcessor } from '../adapters/drizzle-phone-verification-processor.js'
+import { DrizzleUserMessageLinker } from '../adapters/drizzle-user-message-linker.js'
 import { log } from '../observability/log.js'
 import { processWebhookEvent, processWebhookPayload } from '../whatsapp/process-event.js'
 import { asEventId } from '../whatsapp/types.js'
@@ -26,6 +28,8 @@ const DevMirrorMessageSchema = z.object({
 
 const eventStore = new DrizzleEventStore()
 const messageStore = new DrizzleMessageStore()
+const phoneVerificationProcessor = new DrizzlePhoneVerificationProcessor()
+const userMessageLinker = new DrizzleUserMessageLinker()
 
 function parsePubSubMessageData(decoded: string): {
   eventId: ReturnType<typeof asEventId>
@@ -50,7 +54,7 @@ export async function handlePubSubPush(body: unknown): Promise<void> {
   const decoded = Buffer.from(envelope.message.data, 'base64').toString('utf8')
   const { eventId, payload, signature } = parsePubSubMessageData(decoded)
 
-  const deps = { eventStore, messageStore }
+  const deps = { eventStore, messageStore, phoneVerificationProcessor, userMessageLinker }
 
   if (payload !== undefined) {
     log.info('processing dev-mirror message (payload inline, local event stub)', {

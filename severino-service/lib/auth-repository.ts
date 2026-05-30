@@ -110,6 +110,8 @@ export async function updateUser(
     name?: string | null
     email?: string
     emailVerified?: Date | null
+    phoneE164?: string | null
+    phoneVerifiedAt?: Date | null
     image?: string | null
     role?: string
     /** Bcrypt hash; use with {@link createCredentialsUser} / provisioning only. */
@@ -122,6 +124,8 @@ export async function updateUser(
       ...(patch.name !== undefined ? { name: patch.name } : {}),
       ...(patch.email !== undefined ? { email: normalizeEmail(patch.email) } : {}),
       ...(patch.emailVerified !== undefined ? { emailVerified: patch.emailVerified } : {}),
+      ...(patch.phoneE164 !== undefined ? { phoneE164: patch.phoneE164 } : {}),
+      ...(patch.phoneVerifiedAt !== undefined ? { phoneVerifiedAt: patch.phoneVerifiedAt } : {}),
       ...(patch.image !== undefined ? { image: patch.image } : {}),
       ...(patch.role !== undefined ? { role: patch.role } : {}),
       ...(patch.password !== undefined ? { password: patch.password } : {}),

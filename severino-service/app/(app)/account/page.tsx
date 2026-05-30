@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { User as UserIcon } from 'lucide-react'
 
+import { PhoneVerificationForm } from '@/components/account/phone-verification-form'
+import { UserMessagesPanel } from '@/components/account/user-messages-panel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +19,17 @@ interface MeResponse {
   role: string
   image: string | null
   emailVerified: string | null
+  phoneE164: string | null
+  phoneVerifiedAt: string | null
   createdAt: string
+}
+
+type AccountTab = 'profile' | 'settings' | 'messages'
+
+function parseAccountTab(value: string | null): AccountTab {
+  if (value === 'settings') return 'settings'
+  if (value === 'messages') return 'messages'
+  return 'profile'
 }
 
 function AccountPageInner(): React.JSX.Element {
@@ -26,7 +38,7 @@ function AccountPageInner(): React.JSX.Element {
   const searchParams = useSearchParams()
   const [me, setMe] = useState<MeResponse | null>(null)
 
-  const tab = searchParams.get('tab') === 'settings' ? 'settings' : 'profile'
+  const tab = parseAccountTab(searchParams.get('tab'))
 
   useEffect(() => {
     if (status === 'loading') return
@@ -70,24 +82,30 @@ function AccountPageInner(): React.JSX.Element {
     'HS'
 
   const memberSince = me?.createdAt
-    ? new Date(me.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? new Date(me.createdAt).toLocaleDateString('pt-BR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
     : null
+
+  const phoneVerified = Boolean(me?.phoneVerifiedAt && me.phoneE164)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-severinostone">Conta</h1>
-        <p className="text-sm text-muted-foreground">Perfil e configurações da sua conta.</p>
+        <p className="text-sm text-muted-foreground">Perfil, mensagens e configurações da sua conta.</p>
       </div>
 
       <Tabs
         value={tab}
         onValueChange={(next) => {
           const params = new URLSearchParams(searchParams.toString())
-          if (next === 'settings') {
-            params.set('tab', 'settings')
-          } else {
+          if (next === 'profile') {
             params.delete('tab')
+          } else {
+            params.set('tab', next)
           }
           const qs = params.toString()
           router.replace(qs ? `/account?${qs}` : '/account', { scroll: false })
@@ -96,6 +114,7 @@ function AccountPageInner(): React.JSX.Element {
       >
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="messages">Mensagens</TabsTrigger>
           <TabsTrigger value="settings">Configurações</TabsTrigger>
         </TabsList>
 
@@ -119,12 +138,21 @@ function AccountPageInner(): React.JSX.Element {
                 <Badge variant="secondary" className="uppercase">
                   {session.user.role}
                 </Badge>
+                {me?.phoneE164 && me.phoneVerifiedAt ? (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    WhatsApp: {me.phoneE164}
+                  </p>
+                ) : null}
                 {memberSince ? (
                   <p className="text-xs text-muted-foreground pt-2">Membro desde {memberSince}</p>
                 ) : null}
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="messages" className="space-y-6">
+          <UserMessagesPanel phoneVerified={phoneVerified} />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
@@ -155,6 +183,22 @@ function AccountPageInner(): React.JSX.Element {
                   <p className="font-medium uppercase">{session.user.role}</p>
                 </div>
               </div>
+
+              <PhoneVerificationForm
+                initialPhoneE164={me?.phoneE164 ?? null}
+                initialPhoneVerifiedAt={me?.phoneVerifiedAt ?? null}
+                onVerified={(phoneE164, phoneVerifiedAt) => {
+                  setMe((current) =>
+                    current
+                      ? {
+                          ...current,
+                          phoneE164,
+                          phoneVerifiedAt,
+                        }
+                      : current
+                  )
+                }}
+              />
 
               <div className="space-y-2 border-t pt-4">
                 <h4 className="font-medium text-muted-foreground">Preferências</h4>

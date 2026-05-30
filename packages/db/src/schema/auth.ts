@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -9,19 +10,50 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
-export const users = pgTable('users', {
-  id: text('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()::text`),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  emailVerified: timestamp('email_verified', { withTimezone: true, mode: 'date' }),
-  image: text('image'),
-  password: text('password'),
-  role: text('role').notNull().default('user'),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-})
+export const users = pgTable(
+  'users',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()::text`),
+    name: text('name'),
+    email: text('email').notNull().unique(),
+    emailVerified: timestamp('email_verified', { withTimezone: true, mode: 'date' }),
+    phoneE164: text('phone_e164'),
+    phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true, mode: 'date' }),
+    image: text('image'),
+    password: text('password'),
+    role: text('role').notNull().default('user'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('users_phone_e164_verified')
+      .on(t.phoneE164)
+      .where(sql`${t.phoneVerifiedAt} is not null and ${t.phoneE164} is not null`),
+  ]
+)
+
+export const phoneVerificationTokens = pgTable(
+  'phone_verification_tokens',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()::text`),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    phoneE164: text('phone_e164'),
+    codeDigest: text('code_digest').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    expires: timestamp('expires', { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('phone_verification_tokens_user_id').on(t.userId),
+    index('phone_verification_tokens_code_digest').on(t.codeDigest),
+  ]
+)
 
 export const oauthAccounts = pgTable(
   'oauth_accounts',

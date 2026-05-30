@@ -29,6 +29,8 @@ test.describe('account and admin users (staff)', () => {
     await page.goto('/account')
     await expect(page.getByRole('heading', { name: 'Conta' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Perfil' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Mensagens' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Configurações' })).toBeVisible()
 
     await page.goto('/admin/users')
     await expect(page.getByTestId('admin-users-page')).toBeVisible()

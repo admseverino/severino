@@ -12,10 +12,12 @@
     "test:e2e:install": "playwright install chromium",
     "test:e2e": "playwright test",
     "test:e2e:cursor": "playwright test --headed",
+    "test:unit": "node --import tsx --test modules/**/*.test.ts",
     "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json"
   },
   "dependencies": {
     "@severino/db": "workspace:*",
+    "@severino/phone": "workspace:*",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-avatar": "^1.1.0",

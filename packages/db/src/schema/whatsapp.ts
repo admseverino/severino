@@ -9,6 +9,7 @@ import {
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core'
+import { users } from './auth.js'
 
 export const whatsappMessageTypeEnum = pgEnum('whatsapp_message_type', [
   'text',
@@ -91,5 +92,29 @@ export const whatsappMessages = pgTable(
     index('whatsapp_messages_failed')
       .on(t.status)
       .where(sql`${t.status} = 'failed'`),
+  ]
+)
+
+export const userMessages = pgTable(
+  'user_messages',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()::text`),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    whatsappMessageId: text('whatsapp_message_id')
+      .notNull()
+      .references(() => whatsappMessages.id, { onDelete: 'cascade' }),
+    textBody: text('text_body'),
+    waTimestamp: timestamp('wa_timestamp', { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('user_messages_whatsapp_message_id').on(t.whatsappMessageId),
+    index('user_messages_user_ts').on(t.userId, t.waTimestamp),
   ]
 )

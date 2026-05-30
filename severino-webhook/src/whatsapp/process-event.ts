@@ -1,5 +1,7 @@
 import type { EventStore } from '../ports/event-store.js'
 import type { MessageStore } from '../ports/message-store.js'
+import type { PhoneVerificationProcessor } from '../ports/phone-verification-processor.js'
+import type { UserMessageLinker } from '../ports/user-message-linker.js'
 import { log } from '../observability/log.js'
 import { hasOnlyStatusUpdates, normalizeWebhookBody } from './normalize.js'
 import { WhatsAppWebhookBodySchema } from './schema.js'
@@ -8,6 +10,8 @@ import type { EventId } from './types.js'
 export interface ProcessEventDeps {
   eventStore: EventStore
   messageStore: MessageStore
+  phoneVerificationProcessor: PhoneVerificationProcessor
+  userMessageLinker: UserMessageLinker
 }
 
 export interface ProcessPayloadOptions {
@@ -45,14 +49,30 @@ export async function processWebhookPayload(
   }
 
   const messages = normalizeWebhookBody(eventId, parsed.data)
-  const inserted = await deps.messageStore.upsertMessages(messages)
+  const stored = await deps.messageStore.upsertMessages(messages)
+  const verified = await deps.phoneVerificationProcessor.processInboundMessages(
+    stored.map((message) => ({
+      fromMsisdn: message.fromMsisdn,
+      textBody: message.textBody,
+    }))
+  )
+  const linked = await deps.userMessageLinker.linkRegisteredUserMessages(
+    stored.map((message) => ({
+      whatsappMessageId: message.id,
+      fromMsisdn: message.fromMsisdn,
+      textBody: message.textBody,
+      waTimestamp: message.waTimestamp,
+    }))
+  )
 
   await deps.eventStore.markProcessed(eventId)
 
   log.info('webhook event processed', {
     eventId,
     messageCount: messages.length,
-    inserted,
+    storedCount: stored.length,
+    verified,
+    linked,
     trackInEventStore: track,
   })
 }

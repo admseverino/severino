@@ -24,6 +24,8 @@ export async function GET(): Promise<Response> {
     role: user.role,
     image: user.image,
     emailVerified: user.emailVerified?.toISOString() ?? null,
+    phoneE164: user.phoneE164 ?? null,
+    phoneVerifiedAt: user.phoneVerifiedAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
   })
 }

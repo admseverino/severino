@@ -69,8 +69,9 @@ function create_and_push_tag() {
 deployservice() { create_and_push_tag service "$@"; }
 deploydash() { create_and_push_tag dash "$@"; }
 deploywebhook() { create_and_push_tag webhook "$@"; }
+deploywh() { create_and_push_tag webhook "$@"; }
 deploydatabase() { create_and_push_tag database "$@"; }
 
 if [ -n "${BASH_VERSION:-}" ]; then
-    export -f create_and_push_tag deployservice deploydash deploywebhook deploydatabase
+    export -f create_and_push_tag deployservice deploydash deploywebhook deploydatabase deploywh
 fi

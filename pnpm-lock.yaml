@@ -14,6 +14,9 @@ importers:
 
   packages/db:
     dependencies:
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
@@ -21,6 +24,9 @@ importers:
         specifier: ^8.16.0
         version: 8.20.0
     devDependencies:
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: ^20.17.0
         version: 20.19.40
@@ -30,6 +36,18 @@ importers:
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.10
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/phone:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.0
+        version: 20.19.40
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -75,6 +93,9 @@ importers:
       '@severino/db':
         specifier: workspace:*
         version: link:../packages/db
+      '@severino/phone':
+        specifier: workspace:*
+        version: link:../packages/phone
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -166,6 +187,9 @@ importers:
       '@severino/db':
         specifier: workspace:*
         version: link:../packages/db
+      '@severino/phone':
+        specifier: workspace:*
+        version: link:../packages/phone
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)

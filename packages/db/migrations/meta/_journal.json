@@ -29,6 +29,20 @@
       "when": 1780068480444,
       "tag": "0003_breezy_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780150022459,
+      "tag": "0004_safe_star_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780151706060,
+      "tag": "0005_fast_sabretooth",
+      "breakpoints": true
     }
   ]
 }
