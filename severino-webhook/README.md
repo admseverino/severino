@@ -15,12 +15,11 @@ Run with **Node + pnpm** only. Docker is for **Cloud Build → Cloud Run** in GC
 
    `DATABASE_URL` can stay in the **repo root** `.env`; dev scripts load both files.
 
-3. Two terminals:
+3. From repo root, **`pnpm run dev`** (run inside a **Cursor integrated terminal**):
+   opens **ngrok in a second terminal** immediately, then turbo in this one (apps +
+   webhook: **mirror:on** → **worker** `:8081` + **ingest** `:8080`).
 
-   ```bash
-   pnpm --filter severino-webhook run dev:worker   # :8081
-   pnpm --filter severino-webhook run dev:ingest   # :8080, PUBLISHER_MODE=direct → worker
-   ```
+   Single roles: `dev:worker`, `dev:ingest`. Turn off mirror: `pnpm --filter severino-webhook run mirror:off`.
 
 4. Replay a signed fixture (see [`docs/local-development.md`](./docs/local-development.md)).
 

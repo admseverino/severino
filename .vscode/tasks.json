@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ngrok (webhook worker)",
+      "type": "shell",
+      "command": "pnpm --filter severino-webhook run ngrok",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "ZDOTDIR": "${workspaceFolder}/.vscode"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "ngrok",
+        "showReuseMessage": false
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "mirror:off",
+      "type": "shell",
+      "command": "pnpm --filter severino-webhook run mirror:off",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "ZDOTDIR": "${workspaceFolder}/.vscode"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "close": true
+      }
+    }
+  ]
+}

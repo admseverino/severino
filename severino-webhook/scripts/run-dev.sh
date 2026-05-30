@@ -20,13 +20,18 @@ ROLE="${1:-${SERVICE_ROLE:-ingest}}"
 case "$ROLE" in
   ingest)
     export SERVICE_ROLE=ingest
-    export PORT="${PORT:-8080}"
+    # Always 8080 for ingest (ignore PORT=8080 in .env when running worker in parallel)
+    export PORT="${INGEST_PORT:-8080}"
     export PUBLISHER_MODE="${PUBLISHER_MODE:-direct}"
     export WORKER_URL="${WORKER_URL:-http://127.0.0.1:8081}"
     ;;
   worker)
     export SERVICE_ROLE=worker
-    export PORT="${PORT:-8081}"
+    export PORT="${WORKER_PORT:-8081}"
+    if [ -n "${WORKER_TUNNEL_URL:-}" ]; then
+      _tunnel="${WORKER_TUNNEL_URL%/}"
+      export PUBSUB_PUSH_AUDIENCE="${PUBSUB_PUSH_AUDIENCE:-$_tunnel}"
+    fi
     ;;
   *)
     echo "Usage: $0 [ingest|worker]" >&2

@@ -34,24 +34,28 @@ pnpm run db:generate   # after adding packages/db/src/schema/whatsapp.ts
 pnpm run db:migrate
 ```
 
-## Running the two processes locally
+## Running locally
 
-Use the package scripts (they set `SERVICE_ROLE`, ports, and `PUBLISHER_MODE=direct` for ingest):
+From the **repo root**, `pnpm run dev` (in a Cursor integrated terminal) opens **ngrok in a
+separate terminal** first, then runs turbo in the current one. For `severino-webhook`,
+`run-dev-stack.sh` in that turbo stream runs:
+
+1. `mirror:on` (when `WORKER_TUNNEL_URL` is set; skip with `SKIP_WEBHOOK_MIRROR=1`)
+2. worker `:8081` and ingest `:8080`
+
+Ngrok is not started in the turbo terminal (`scripts/dev.sh` + `open-cursor-terminal.sh`).
+
+Individual commands:
 
 ```bash
-# terminal 1 — worker (Pub/Sub push target, or direct push from ingest)
+pnpm --filter severino-webhook run dev          # stack only (no other turbo apps)
 pnpm --filter severino-webhook run dev:worker
-
-# terminal 2 — ingest (HTTP webhook → worker on :8081)
 pnpm --filter severino-webhook run dev:ingest
+pnpm --filter severino-webhook run ngrok
+pnpm --filter severino-webhook run mirror:on    # mirror:off | mirror:status
 ```
 
-Equivalent manual form (see [`type-safety.md`](./type-safety.md)):
-
-```bash
-SERVICE_ROLE=ingest PORT=8080 PUBLISHER_MODE=direct WORKER_URL=http://127.0.0.1:8081 \
-  pnpm --filter severino-webhook run dev
-```
+Shell helpers: `run-dev-stack.sh`, `run-dev.sh`, `run-ngrok.sh`, `dev-mirror-sub.sh`.
 
 ### Local Pub/Sub
 
@@ -66,6 +70,43 @@ For a quick loop you can also configure the publisher adapter with a **`direct` 
 the worker's push endpoint over localhost instead of going through Pub/Sub — handy for stepping
 through ingest→worker in a debugger. (This is an adapter swap, per
 [`module-structure.md`](./module-structure.md); the domain doesn't change.)
+
+## Live mirror: prod ingest → local worker (Pub/Sub fan-out)
+
+WhatsApp must keep the **production ingest URL** unchanged. To still run the worker on your laptop
+against real traffic, use a **second push subscription** on the same topic (`whatsapp-events`).
+Production keeps `whatsapp-events-push` → Cloud Run worker; the mirror uses
+`whatsapp-events-push-local` → your ngrok URL.
+
+```
+Meta → prod ingest (Cloud Run) → whatsapp_events (Cloud SQL) → Pub/Sub topic
+                                      ├─ whatsapp-events-push        → prod worker
+                                      └─ whatsapp-events-push-local  → ngrok → local worker
+```
+
+**On/off** (does not touch prod ingest or prod push):
+
+```bash
+pnpm --filter severino-webhook run mirror:off
+pnpm --filter severino-webhook run mirror:status
+```
+
+Set in `severino-webhook/.env`:
+
+- `GCP_PROJECT_ID=severino-project`
+- `WORKER_TUNNEL_URL=https://<your-subdomain>.ngrok-free.dev` (no trailing slash)
+
+**Run locally:** set `WORKER_TUNNEL_URL`, then `pnpm run dev` from the repo root.
+
+The worker loads each event by `eventId` from Postgres. For prod traffic you must use the **same
+database as Cloud Run** (e.g. Cloud SQL Auth Proxy and `DATABASE_URL` / socket env in repo-root
+`.env`), not an empty local Postgres.
+
+OIDC: the mirror subscription pushes with `severino-sa` and audience = `WORKER_TUNNEL_URL`.
+`dev:worker` sets `PUBSUB_PUSH_AUDIENCE` from that URL when unset.
+
+When the laptop or tunnel is down, only the local subscription retries (1-day retention, 5
+attempts then DLQ). Prod processing is unaffected.
 
 ## Exposing the endpoint to Meta
 

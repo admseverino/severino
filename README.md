@@ -111,8 +111,6 @@ pnpm --filter severino-service run create-admin
 6. Run the development server:
 
 ```bash
-pnpm --filter severino-service run dev
-# or from repo root:
 pnpm dev
 ```
 
@@ -122,7 +120,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 Root (`pnpm` from repo root):
 
-- `pnpm dev` — Start dev tasks via Turborepo (main app)
+- `pnpm dev` — ngrok in a separate Cursor terminal, then turbo (apps + webhook mirror/worker/ingest)
 - `pnpm build` — Build all packages/apps
 - `pnpm lint` — Lint via Turborepo
 - `pnpm run db:generate` — Generate a Drizzle migration in `packages/db`

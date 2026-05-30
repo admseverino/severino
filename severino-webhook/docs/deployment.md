@@ -30,6 +30,7 @@ Meta ──▶ severino-webhook-ingest (Cloud Run, public)
 | Cloud Run service | `severino-webhook-worker` | Pub/Sub push target, DB writer (private, no unauth) |
 | Pub/Sub topic | `whatsapp-events` | decouples ingest from processing |
 | Pub/Sub subscription | `whatsapp-events-push` | push → worker URL, with OIDC token |
+| Pub/Sub subscription | `whatsapp-events-push-local` | optional dev mirror → ngrok; create with `mirror:on` |
 | Pub/Sub topic | `whatsapp-events-dlq` | dead-letter after max attempts |
 | Service account | `severino-sa@…` | Cloud Build deployer, Cloud Run runtime (ingest + worker), Pub/Sub OIDC push |
 | Cloud Scheduler job | `whatsapp-reconcile` | re-publishes stranded `whatsapp_events` |
