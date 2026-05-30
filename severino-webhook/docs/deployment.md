@@ -28,9 +28,10 @@ Meta ──▶ severino-webhook-ingest (Cloud Run, public)
 |---|---|---|
 | Cloud Run service | `severino-webhook-ingest` | public HTTPS webhook endpoint |
 | Cloud Run service | `severino-webhook-worker` | Pub/Sub push target, DB writer (private, no unauth) |
-| Pub/Sub topic | `whatsapp-events` | decouples ingest from processing |
+| Pub/Sub topic | `whatsapp-events` | decouples ingest from processing (`{ eventId }`) |
+| Pub/Sub topic | `whatsapp-events-dev-mirror` | optional; `{ eventId, payload }` for local dev mirror |
 | Pub/Sub subscription | `whatsapp-events-push` | push → worker URL, with OIDC token |
-| Pub/Sub subscription | `whatsapp-events-push-local` | optional dev mirror → ngrok; create with `mirror:on` |
+| Pub/Sub subscription | `whatsapp-events-push-local` | dev mirror → ngrok (`mirror:on`, dev-mirror topic) |
 | Pub/Sub topic | `whatsapp-events-dlq` | dead-letter after max attempts |
 | Service account | `severino-sa@…` | Cloud Build deployer, Cloud Run runtime (ingest + worker), Pub/Sub OIDC push |
 | Cloud Scheduler job | `whatsapp-reconcile` | re-publishes stranded `whatsapp_events` |
@@ -56,6 +57,7 @@ Zod-validated env in [`type-safety.md`](./type-safety.md):
 | `WHATSAPP_PHONE_NUMBER_ID` | env / secret | both (context) |
 | `WHATSAPP_WABA_ID` | env | both (context) |
 | `PUBSUB_TOPIC` | env (`whatsapp-events`) | ingest |
+| `PUBSUB_DEV_MIRROR_TOPIC` | env (`whatsapp-events-dev-mirror`) | ingest (dual-publish full payload) |
 | `PUBSUB_PUSH_AUDIENCE` | env (worker URL) | worker (OIDC verify) |
 | `INSTANCE_CONNECTION_NAME` | trigger substitution `_INSTANCE_CONNECTION_NAME` | ingest + worker |
 | `DB_USER` | trigger substitution `_DB_USER` | ingest + worker |

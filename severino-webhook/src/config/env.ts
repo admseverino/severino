@@ -48,6 +48,8 @@ const IngestEnvSchema = z
     WHATSAPP_APP_SECRET: z.string().min(1),
     WHATSAPP_VERIFY_TOKEN: z.string().min(1),
     PUBSUB_TOPIC: z.string().min(1),
+    /** When set, prod ingest also publishes { eventId, payload } for local dev mirror workers. */
+    PUBSUB_DEV_MIRROR_TOPIC: z.string().min(1).optional(),
     PUBLISHER_MODE: z.enum(['pubsub', 'direct']).default('pubsub'),
     WORKER_URL: z.string().url().optional(),
   })

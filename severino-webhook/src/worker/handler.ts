@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { DrizzleEventStore } from '../adapters/drizzle-event-store.js'
 import { DrizzleMessageStore } from '../adapters/drizzle-message-store.js'
 import { log } from '../observability/log.js'
-import { processWebhookEvent } from '../whatsapp/process-event.js'
+import { processWebhookEvent, processWebhookPayload } from '../whatsapp/process-event.js'
 import { asEventId } from '../whatsapp/types.js'
 
 const PubSubPushSchema = z.object({
@@ -14,22 +14,49 @@ const PubSubPushSchema = z.object({
   subscription: z.string().optional(),
 })
 
-const EventMessageSchema = z.object({
+const EventIdOnlySchema = z.object({
   eventId: z.string().min(1),
+})
+
+const DevMirrorMessageSchema = z.object({
+  eventId: z.string().min(1),
+  payload: z.unknown(),
+  signature: z.string().nullable().optional(),
 })
 
 const eventStore = new DrizzleEventStore()
 const messageStore = new DrizzleMessageStore()
 
+function parsePubSubMessageData(decoded: string): {
+  eventId: ReturnType<typeof asEventId>
+  payload?: unknown
+} {
+  const json: unknown = JSON.parse(decoded)
+  const mirror = DevMirrorMessageSchema.safeParse(json)
+  if (mirror.success) {
+    return { eventId: asEventId(mirror.data.eventId), payload: mirror.data.payload }
+  }
+  const idOnly = EventIdOnlySchema.parse(json)
+  return { eventId: asEventId(idOnly.eventId) }
+}
+
 export async function handlePubSubPush(body: unknown): Promise<void> {
   const envelope = PubSubPushSchema.parse(body)
   const decoded = Buffer.from(envelope.message.data, 'base64').toString('utf8')
-  const { eventId } = EventMessageSchema.parse(JSON.parse(decoded) as unknown)
+  const { eventId, payload } = parsePubSubMessageData(decoded)
 
-  await processWebhookEvent(asEventId(eventId), {
-    eventStore,
-    messageStore,
-  })
+  const deps = { eventStore, messageStore }
+
+  if (payload !== undefined) {
+    log.info('processing dev-mirror message (payload inline, no event store lookup)', {
+      eventId,
+      subscription: envelope.subscription,
+    })
+    await processWebhookPayload(eventId, payload, deps, { trackInEventStore: false })
+    return
+  }
+
+  await processWebhookEvent(eventId, deps)
 }
 
 export async function handlePubSubPushSafe(body: unknown): Promise<{ ok: boolean }> {

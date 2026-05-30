@@ -20,7 +20,7 @@ function createPublisher(env: IngestEnv): EventPublisher {
     throw new Error('GCP_PROJECT_ID or GOOGLE_CLOUD_PROJECT is required for pubsub publisher')
   }
 
-  return new PubSubEventPublisher(projectId, env.PUBSUB_TOPIC)
+  return new PubSubEventPublisher(projectId, env.PUBSUB_TOPIC, env.PUBSUB_DEV_MIRROR_TOPIC)
 }
 
 export function createIngestRouter(env: IngestEnv): Router {
@@ -81,8 +81,14 @@ export function createIngestRouter(env: IngestEnv): Router {
         rawBody: rawBody.toString('utf8'),
       })
 
+      const publishEnvelope = {
+        signature: signature ?? null,
+        payload,
+        rawBody: rawBody.toString('utf8'),
+      }
+
       try {
-        await publisher.publish(eventId)
+        await publisher.publish(eventId, publishEnvelope)
       } catch (publishError) {
         log.error('failed to publish event; row persisted for reconciliation', {
           eventId,

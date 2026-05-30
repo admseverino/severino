@@ -15,9 +15,10 @@ Run with **Node + pnpm** only. Docker is for **Cloud Build → Cloud Run** in GC
 
    `DATABASE_URL` can stay in the **repo root** `.env`; dev scripts load both files.
 
-3. From repo root, **`pnpm run dev`** (run inside a **Cursor integrated terminal**):
-   opens **ngrok in a second terminal** immediately, then turbo in this one (apps +
-   webhook: **mirror:on** → **worker** `:8081` + **ingest** `:8080`).
+3. From repo root, **`pnpm run dev`** (Cursor terminal): **ngrok** in a second terminal, then turbo
+   (webhook: **mirror:on** → **worker** `:8081`; local ingest optional). Live mirror uses topic
+   **`whatsapp-events-dev-mirror`** (full payload — no Cloud SQL read on the laptop). Deploy
+   ingest after pulling this change so prod publishes to that topic.
 
    Single roles: `dev:worker`, `dev:ingest`. Turn off mirror: `pnpm --filter severino-webhook run mirror:off`.
 

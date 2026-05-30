@@ -18,7 +18,7 @@ load_env ../.env
 load_env .env
 
 PROJECT="${GCP_PROJECT_ID:-${GOOGLE_CLOUD_PROJECT:-}}"
-TOPIC="${PUBSUB_TOPIC:-whatsapp-events}"
+TOPIC="${PUBSUB_DEV_MIRROR_TOPIC:-whatsapp-events-dev-mirror}"
 SUB="${PUBSUB_LOCAL_SUBSCRIPTION:-whatsapp-events-push-local}"
 DLQ="${PUBSUB_DLQ_TOPIC:-whatsapp-events-dlq}"
 SA_EMAIL="${PUBSUB_PUSH_SA:-severino-sa@${PROJECT}.iam.gserviceaccount.com}"

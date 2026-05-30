@@ -10,6 +10,55 @@ export interface ProcessEventDeps {
   messageStore: MessageStore
 }
 
+export interface ProcessPayloadOptions {
+  /** When false, skip whatsapp_events reads/updates (dev mirror with local DB only). */
+  trackInEventStore?: boolean
+}
+
+export async function processWebhookPayload(
+  eventId: EventId,
+  payload: unknown,
+  deps: ProcessEventDeps,
+  options: ProcessPayloadOptions = {}
+): Promise<void> {
+  const track = options.trackInEventStore !== false
+
+  if (track) {
+    await deps.eventStore.incrementProcessAttempts(eventId)
+  }
+
+  const parsed = WhatsAppWebhookBodySchema.safeParse(payload)
+  if (!parsed.success) {
+    const error = parsed.error.message
+    if (track) {
+      await deps.eventStore.markFailed(eventId, error)
+    }
+    throw new Error(`Invalid webhook payload: ${error}`)
+  }
+
+  if (hasOnlyStatusUpdates(parsed.data)) {
+    if (track) {
+      await deps.eventStore.markProcessed(eventId)
+    }
+    log.info('webhook event contained status updates only', { eventId, trackInEventStore: track })
+    return
+  }
+
+  const messages = normalizeWebhookBody(eventId, parsed.data)
+  const inserted = await deps.messageStore.upsertMessages(messages)
+
+  if (track) {
+    await deps.eventStore.markProcessed(eventId)
+  }
+
+  log.info('webhook event processed', {
+    eventId,
+    messageCount: messages.length,
+    inserted,
+    trackInEventStore: track,
+  })
+}
+
 export async function processWebhookEvent(
   eventId: EventId,
   deps: ProcessEventDeps
@@ -24,24 +73,5 @@ export async function processWebhookEvent(
     return
   }
 
-  await deps.eventStore.incrementProcessAttempts(eventId)
-
-  const parsed = WhatsAppWebhookBodySchema.safeParse(event.payload)
-  if (!parsed.success) {
-    const error = parsed.error.message
-    await deps.eventStore.markFailed(eventId, error)
-    throw new Error(`Invalid webhook payload: ${error}`)
-  }
-
-  if (hasOnlyStatusUpdates(parsed.data)) {
-    await deps.eventStore.markProcessed(eventId)
-    log.info('webhook event contained status updates only', { eventId })
-    return
-  }
-
-  const messages = normalizeWebhookBody(eventId, parsed.data)
-  const inserted = await deps.messageStore.upsertMessages(messages)
-
-  await deps.eventStore.markProcessed(eventId)
-  log.info('webhook event processed', { eventId, messageCount: messages.length, inserted })
+  await processWebhookPayload(eventId, event.payload, deps, { trackInEventStore: true })
 }

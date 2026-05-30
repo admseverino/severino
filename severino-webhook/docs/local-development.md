@@ -79,9 +79,10 @@ Production keeps `whatsapp-events-push` → Cloud Run worker; the mirror uses
 `whatsapp-events-push-local` → your ngrok URL.
 
 ```
-Meta → prod ingest (Cloud Run) → whatsapp_events (Cloud SQL) → Pub/Sub topic
-                                      ├─ whatsapp-events-push        → prod worker
-                                      └─ whatsapp-events-push-local  → ngrok → local worker
+Meta → prod ingest (Cloud Run) → whatsapp_events (Cloud SQL)
+              ├─ publish { eventId } → whatsapp-events → prod worker
+              └─ publish { eventId, payload } → whatsapp-events-dev-mirror
+                        → whatsapp-events-push-local → ngrok → local worker (local DB only)
 ```
 
 **On/off** (does not touch prod ingest or prod push):
@@ -107,6 +108,35 @@ OIDC: the mirror subscription pushes with `severino-sa` and audience = `WORKER_T
 
 When the laptop or tunnel is down, only the local subscription retries (1-day retention, 5
 attempts then DLQ). Prod processing is unaffected.
+
+### Dev mirror topic (no Cloud SQL read on laptop)
+
+Prod ingest must have `PUBSUB_DEV_MIRROR_TOPIC=whatsapp-events-dev-mirror` (set by deploy or
+`gcloud run services update`). It publishes **`{ eventId, payload, signature }`** to that topic.
+The local push subscription (`mirror:on`) listens on the **dev-mirror topic**, not
+`whatsapp-events`.
+
+Local worker:
+
+- Does **not** load `whatsapp_events` for mirror messages (payload is inline).
+- Still uses **local** `DATABASE_URL` to upsert `whatsapp_messages` for debugging.
+
+You do **not** need local ingest for prod traffic. Optional: `SKIP_LOCAL_INGEST=1` in
+`severino-webhook/.env` and only run `dev:worker` if you trim the stack later.
+
+#### One-time GCP setup
+
+```bash
+gcloud pubsub topics create whatsapp-events-dev-mirror --project=severino-project
+
+gcloud run services update severino-webhook-ingest \
+  --project=severino-project --region=us-east4 \
+  --update-env-vars PUBSUB_DEV_MIRROR_TOPIC=whatsapp-events-dev-mirror
+
+pnpm --filter severino-webhook run mirror:on
+```
+
+Redeploy ingest after code change so dual-publish runs in the handler.
 
 ## Exposing the endpoint to Meta
 
