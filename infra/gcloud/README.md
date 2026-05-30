@@ -216,6 +216,21 @@ echo -n 'REPLACE' | gcloud secrets create whatsapp-app-secret \
 
 echo -n 'REPLACE' | gcloud secrets create whatsapp-verify-token \
   --project=severino-project --data-file=-
+
+echo -n 'REPLACE' | gcloud secrets create whatsapp-access-token \
+  --project=severino-project --data-file=-
+```
+
+Outbound WhatsApp send (`severino-service`) uses `whatsapp-access-token` + env `WHATSAPP_PHONE_NUMBER_ID`:
+
+```bash
+echo -n 'YOUR_META_GRAPH_ACCESS_TOKEN' | gcloud secrets versions add whatsapp-access-token \
+  --project=severino-project --data-file=-
+
+gcloud run services update severino-service \
+  --project=severino-project --region=us-east4 \
+  --set-secrets="NEXTAUTH_SECRET=nextauth-secret:latest,WHATSAPP_ACCESS_TOKEN=whatsapp-access-token:latest" \
+  --update-env-vars="WHATSAPP_PHONE_NUMBER_ID=YOUR_PHONE_NUMBER_ID,WHATSAPP_VERIFICATION_PHONE_E164=+5551995969303"
 ```
 
 ### 7. Cloud Build triggers
