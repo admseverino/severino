@@ -15,6 +15,17 @@ export function codeDigest(code: string): string {
   return createHash('sha256').update(code.trim()).digest('hex')
 }
 
+/** True when at least one verification challenge is still active (cheap gate for inbound worker). */
+export async function hasActivePhoneVerificationChallenges(): Promise<boolean> {
+  const [row] = await db()
+    .select({ id: phoneVerificationTokens.id })
+    .from(phoneVerificationTokens)
+    .where(gt(phoneVerificationTokens.expires, new Date()))
+    .limit(1)
+
+  return Boolean(row)
+}
+
 async function markUserPhoneVerified(
   userId: string,
   phoneE164: string
@@ -70,6 +81,10 @@ export async function tryCompletePhoneVerificationByInbound(
     .where(and(eq(phoneVerificationTokens.codeDigest, codeDigest(trimmedCode)), gt(phoneVerificationTokens.expires, new Date())))
 
   for (const challenge of challenges) {
+    if (challenge.phoneE164 && challenge.phoneE164 !== senderPhoneE164) {
+      continue
+    }
+
     const valid = await bcrypt.compare(trimmedCode, challenge.tokenHash)
     if (!valid) {
       continue

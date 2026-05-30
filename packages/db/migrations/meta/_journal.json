@@ -43,6 +43,13 @@
       "when": 1780151706060,
       "tag": "0005_fast_sabretooth",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780155191294,
+      "tag": "0006_overjoyed_carlie_cooper",
+      "breakpoints": true
     }
   ]
 }

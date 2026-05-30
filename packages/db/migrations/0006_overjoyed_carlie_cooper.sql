@@ -1,0 +1,1 @@
+CREATE INDEX "phone_verification_tokens_expires" ON "phone_verification_tokens" USING btree ("expires");

@@ -1,5 +1,19 @@
 import { digitsOnly, isValidE164 } from './normalize.js'
 
+/** Fast pre-filter before DB lookup: message may contain a 6-digit verification code. */
+export function looksLikeVerificationCodeMessage(text: string | null | undefined): boolean {
+  if (!text) {
+    return false
+  }
+
+  const trimmed = text.trim()
+  if (/^\d{6}$/.test(trimmed)) {
+    return true
+  }
+
+  return /\b\d{6}\b/.test(trimmed)
+}
+
 /** Extract a 6-digit verification code from inbound WhatsApp text. */
 export function extractVerificationCode(text: string | null | undefined): string | null {
   if (!text) {

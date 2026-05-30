@@ -1,5 +1,9 @@
-import { tryCompletePhoneVerificationByInbound } from '@severino/db'
-import { extractVerificationCode, msisdnToE164 } from '@severino/phone'
+import { hasActivePhoneVerificationChallenges, tryCompletePhoneVerificationByInbound } from '@severino/db'
+import {
+  extractVerificationCode,
+  looksLikeVerificationCodeMessage,
+  msisdnToE164,
+} from '@severino/phone'
 
 import type {
   InboundVerificationMessage,
@@ -9,9 +13,25 @@ import { log } from '../observability/log.js'
 
 export class DrizzlePhoneVerificationProcessor implements PhoneVerificationProcessor {
   async processInboundMessages(messages: InboundVerificationMessage[]): Promise<number> {
+    if (messages.length === 0) {
+      return 0
+    }
+
+    const candidateMessages = messages.filter((message) =>
+      looksLikeVerificationCodeMessage(message.textBody)
+    )
+    if (candidateMessages.length === 0) {
+      return 0
+    }
+
+    const hasActiveChallenges = await hasActivePhoneVerificationChallenges()
+    if (!hasActiveChallenges) {
+      return 0
+    }
+
     let verified = 0
 
-    for (const message of messages) {
+    for (const message of candidateMessages) {
       const code = extractVerificationCode(message.textBody)
       if (!code) {
         continue

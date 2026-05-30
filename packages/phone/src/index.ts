@@ -10,4 +10,5 @@ export {
   buildWhatsAppVerificationUrl,
   e164ToWhatsAppDigits,
   extractVerificationCode,
+  looksLikeVerificationCodeMessage,
 } from './whatsapp.js'

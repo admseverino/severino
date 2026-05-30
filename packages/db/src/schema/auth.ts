@@ -52,6 +52,7 @@ export const phoneVerificationTokens = pgTable(
   (t) => [
     index('phone_verification_tokens_user_id').on(t.userId),
     index('phone_verification_tokens_code_digest').on(t.codeDigest),
+    index('phone_verification_tokens_expires').on(t.expires),
   ]
 )
 
