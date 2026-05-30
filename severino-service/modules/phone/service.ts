@@ -3,15 +3,20 @@ import { randomInt } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { and, eq, isNotNull, ne } from 'drizzle-orm'
 import { codeDigest, tryCompletePhoneVerificationForUser, db, schema } from '@severino/db'
-import { buildWhatsAppVerificationUrl, isValidE164, normalizeToE164 } from '@severino/phone'
+import {
+  buildWhatsAppVerificationUrl,
+  isValidE164,
+  normalizeToE164,
+  parseWhatsAppSendConfigFromEnv,
+  sendWhatsAppText,
+  WhatsAppSendError,
+} from '@severino/phone'
 
 const { users, phoneVerificationTokens } = schema
 
 const CODE_TTL_MS = 10 * 60 * 1000
 const BCRYPT_ROUNDS = 10
 const DEFAULT_WHATSAPP_VERIFICATION_PHONE = '+5551995969303'
-const META_GRAPH_VERSION = 'v23.0'
-
 export class PhoneVerificationError extends Error {
   constructor(
     message: string,
@@ -24,15 +29,6 @@ export class PhoneVerificationError extends Error {
 
 function generateVerificationCode(): string {
   return String(randomInt(100_000, 1_000_000))
-}
-
-function getWhatsAppOutboundConfig(): { accessToken: string; phoneNumberId: string } | null {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim()
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()
-  if (!accessToken || !phoneNumberId) {
-    return null
-  }
-  return { accessToken, phoneNumberId }
 }
 
 async function ensurePhoneIsAvailableForUser(userId: string, phoneE164: string): Promise<void> {
@@ -93,7 +89,7 @@ async function createVerificationChallenge(
 }
 
 async function sendCodeByWhatsAppTemplate(phoneE164: string, verificationCode: string): Promise<void> {
-  const config = getWhatsAppOutboundConfig()
+  const config = parseWhatsAppSendConfigFromEnv()
   if (!config) {
     throw new PhoneVerificationError(
       'Envio automático não está configurado. Defina WHATSAPP_ACCESS_TOKEN e WHATSAPP_PHONE_NUMBER_ID.',
@@ -101,31 +97,20 @@ async function sendCodeByWhatsAppTemplate(phoneE164: string, verificationCode: s
     )
   }
 
-  const response = await fetch(
-    `https://graph.facebook.com/${META_GRAPH_VERSION}/${config.phoneNumberId}/messages`,
-    {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${config.accessToken}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phoneE164.replace('+', ''),
-        type: 'text',
-        text: {
-          body: `Seu código de verificação Severino é ${verificationCode}.`,
-        },
-      }),
+  try {
+    await sendWhatsAppText({
+      config,
+      toE164: phoneE164,
+      body: `Seu código de verificação Severino é ${verificationCode}.`,
+    })
+  } catch (error) {
+    if (error instanceof WhatsAppSendError) {
+      throw new PhoneVerificationError(
+        `Não foi possível enviar o código para seu número (${error.status ?? 502}). ${error.responseBody ?? error.message}`,
+        error.status ?? 502
+      )
     }
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new PhoneVerificationError(
-      `Não foi possível enviar o código para seu número (${response.status}). ${errorText}`,
-      502
-    )
+    throw error
   }
 }
 

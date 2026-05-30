@@ -1,8 +1,9 @@
-import type { NormalizedWhatsAppMessage, Msisdn, Wamid } from '../whatsapp/types.js'
+import type { NormalizedWhatsAppMessage, Msisdn, PhoneNumberId, Wamid } from '../whatsapp/types.js'
 
 export interface StoredWhatsAppMessage {
   id: string
   wamid: Wamid
+  phoneNumberId: PhoneNumberId
   fromMsisdn: Msisdn
   textBody: string | null
   waTimestamp: Date

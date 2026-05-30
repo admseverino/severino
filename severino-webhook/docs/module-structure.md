@@ -45,7 +45,12 @@ severino-webhook/
 │   ├── ports/                  # INTERFACES — the seams that keep domain pure
 │   │   ├── message-store.ts    #   interface MessageStore { upsertMessages, markEvent... }
 │   │   ├── event-store.ts      #   interface EventStore   { insertRaw, loadById... }
-│   │   └── event-publisher.ts  #   interface EventPublisher { publish(eventId) }
+│   │   ├── event-publisher.ts  #   interface EventPublisher { publish(eventId) }
+│   │   └── inbound-message-handler.ts  # app-specific inbound side effects
+│   │
+│   ├── handlers/               # APP HANDLERS — business meaning keyed by phone_number_id
+│   │   ├── severino-inbound-handler.ts
+│   │   └── handler-router.ts
 │   │
 │   ├── adapters/               # IMPLEMENTATIONS — the only code that touches infra
 │   │   ├── drizzle-message-store.ts   # implements MessageStore via @severino/db
@@ -109,7 +114,8 @@ drift between the two. See [`deployment.md`](./deployment.md).
   ([`docs/architecture-decisions.md` §4.1](../../docs/architecture-decisions.md)).
 - **Nothing from `severino-service`.** No shared `lib/`, no shared components. If something truly
   needs sharing later, it gets promoted into its own `packages/*` package — not imported across
-  service boundaries.
+  service boundaries. Outbound WhatsApp send lives in `@severino/phone`; app-specific messaging
+  intents (e.g. meter-reading confirm prompts) live in `severino-service/modules/messaging`.
 
 ## Conventions (mirroring the repo)
 

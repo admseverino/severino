@@ -12,3 +12,12 @@ export {
   extractVerificationCode,
   looksLikeVerificationCodeMessage,
 } from './whatsapp.js'
+
+export {
+  DEFAULT_META_GRAPH_VERSION,
+  parseWhatsAppSendConfigFromEnv,
+  sendWhatsAppText,
+  WhatsAppSendError,
+  type SendWhatsAppTextParams,
+  type WhatsAppSendConfig,
+} from './whatsapp-send.js'

@@ -1,7 +1,7 @@
 import type { EventStore } from '../ports/event-store.js'
+import type { InboundMessageHandler } from '../ports/inbound-message-handler.js'
 import type { MessageStore } from '../ports/message-store.js'
-import type { PhoneVerificationProcessor } from '../ports/phone-verification-processor.js'
-import type { UserMessageLinker } from '../ports/user-message-linker.js'
+import { runInboundHandlers } from '../handlers/handler-router.js'
 import { log } from '../observability/log.js'
 import { hasOnlyStatusUpdates, normalizeWebhookBody } from './normalize.js'
 import { WhatsAppWebhookBodySchema } from './schema.js'
@@ -10,8 +10,7 @@ import type { EventId } from './types.js'
 export interface ProcessEventDeps {
   eventStore: EventStore
   messageStore: MessageStore
-  phoneVerificationProcessor: PhoneVerificationProcessor
-  userMessageLinker: UserMessageLinker
+  inboundHandlers: InboundMessageHandler[]
 }
 
 export interface ProcessPayloadOptions {
@@ -50,15 +49,12 @@ export async function processWebhookPayload(
 
   const messages = normalizeWebhookBody(eventId, parsed.data)
   const stored = await deps.messageStore.upsertMessages(messages)
-  const verified = await deps.phoneVerificationProcessor.processInboundMessages(
+  const handlerResults = await runInboundHandlers(
+    deps.inboundHandlers,
     stored.map((message) => ({
-      fromMsisdn: message.fromMsisdn,
-      textBody: message.textBody,
-    }))
-  )
-  const linked = await deps.userMessageLinker.linkRegisteredUserMessages(
-    stored.map((message) => ({
-      whatsappMessageId: message.id,
+      id: message.id,
+      wamid: message.wamid,
+      phoneNumberId: message.phoneNumberId,
       fromMsisdn: message.fromMsisdn,
       textBody: message.textBody,
       waTimestamp: message.waTimestamp,
@@ -71,8 +67,7 @@ export async function processWebhookPayload(
     eventId,
     messageCount: messages.length,
     storedCount: stored.length,
-    verified,
-    linked,
+    handlerResultsJson: JSON.stringify(handlerResults),
     trackInEventStore: track,
   })
 }

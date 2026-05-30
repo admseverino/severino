@@ -104,7 +104,9 @@ transport is swappable.
 ## What this service does NOT do
 
 - It does not **send** WhatsApp messages (outbound is a separate concern; this is ingest-only).
+  Outbound send is provided by `@severino/phone` and consumed by app modules such as
+  `severino-service/modules/phone` and `severino-service/modules/messaging`.
 - It does not hold business rules about meters/readings — it only normalizes and persists
-  inbound messages and emits a domain event. Consumers downstream decide what a message means.
+  inbound messages and runs registered app handlers. Consumers downstream decide what a message means.
 - It does not own the database schema lifecycle beyond its own tables — migrations live in
   `@severino/db` with everything else.

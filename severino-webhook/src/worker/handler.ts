@@ -3,6 +3,11 @@ import { DrizzleEventStore } from '../adapters/drizzle-event-store.js'
 import { DrizzleMessageStore } from '../adapters/drizzle-message-store.js'
 import { DrizzlePhoneVerificationProcessor } from '../adapters/drizzle-phone-verification-processor.js'
 import { DrizzleUserMessageLinker } from '../adapters/drizzle-user-message-linker.js'
+import { env, isWorkerEnv } from '../config/env.js'
+import {
+  parsePhoneNumberIdList,
+  SeverinoInboundHandler,
+} from '../handlers/severino-inbound-handler.js'
 import { log } from '../observability/log.js'
 import { processWebhookEvent, processWebhookPayload } from '../whatsapp/process-event.js'
 import { asEventId } from '../whatsapp/types.js'
@@ -31,6 +36,22 @@ const messageStore = new DrizzleMessageStore()
 const phoneVerificationProcessor = new DrizzlePhoneVerificationProcessor()
 const userMessageLinker = new DrizzleUserMessageLinker()
 
+function createInboundHandlers() {
+  const severinoPhoneNumberIds = parsePhoneNumberIdList(
+    isWorkerEnv(env) ? env.SEVERINO_PHONE_NUMBER_IDS : undefined
+  )
+
+  return [
+    new SeverinoInboundHandler(
+      severinoPhoneNumberIds,
+      phoneVerificationProcessor,
+      userMessageLinker
+    ),
+  ]
+}
+
+const inboundHandlers = createInboundHandlers()
+
 function parsePubSubMessageData(decoded: string): {
   eventId: ReturnType<typeof asEventId>
   payload?: unknown
@@ -54,7 +75,7 @@ export async function handlePubSubPush(body: unknown): Promise<void> {
   const decoded = Buffer.from(envelope.message.data, 'base64').toString('utf8')
   const { eventId, payload, signature } = parsePubSubMessageData(decoded)
 
-  const deps = { eventStore, messageStore, phoneVerificationProcessor, userMessageLinker }
+  const deps = { eventStore, messageStore, inboundHandlers }
 
   if (payload !== undefined) {
     log.info('processing dev-mirror message (payload inline, local event stub)', {

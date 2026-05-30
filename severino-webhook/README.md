@@ -58,6 +58,14 @@ Design docs live in [`docs/`](./docs/). They are intentionally decision-driven (
 - **Idempotency:** WhatsApp message IDs (`wamid.*`) are the natural dedup key; a unique
   index makes redelivery a no-op.
 
+## Messaging boundaries
+
+- **Inbound:** `severino-webhook` persists normalized rows and runs app handlers registered
+  in `src/handlers/`. Severino handlers are gated by `SEVERINO_PHONE_NUMBER_IDS` (empty = all).
+- **Outbound:** Not sent from the webhook. Use `@severino/phone` (`sendWhatsAppText`) from any
+  service. Severino app intents (e.g. meter-reading confirm after offline sync) live in
+  `severino-service/modules/messaging`.
+
 ## Local development (no Docker)
 
 Run with **Node + pnpm** only. The [`Dockerfile`](./Dockerfile) is for **Cloud Build → Cloud Run** in GCP.
@@ -149,6 +157,7 @@ Deploy ingest after code changes so dual-publish is active (`webhook-X.Y.Z` tag)
 | `PUBSUB_PUSH_AUDIENCE` | Set to tunnel URL for local worker (auto from `WORKER_TUNNEL_URL`) |
 | `DATABASE_URL` | Local Postgres for dev mirror / local ingest |
 | `PUBLISHER_MODE=direct` | Local ingest POSTs to `WORKER_URL` (no Pub/Sub) |
+| `SEVERINO_PHONE_NUMBER_IDS` | Worker: comma-separated Meta phone IDs for Severino handlers (empty = all) |
 
 ## Production
 

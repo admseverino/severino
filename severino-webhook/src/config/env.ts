@@ -63,6 +63,8 @@ const WorkerEnvSchema = z
     GCP_PROJECT_ID: z.string().min(1).optional(),
     WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
     WHATSAPP_WABA_ID: z.string().optional(),
+    /** Comma-separated Meta phone number IDs handled by Severino app handlers. Empty = all. */
+    SEVERINO_PHONE_NUMBER_IDS: z.string().optional(),
     ...dbEnvFields,
     PUBSUB_PUSH_AUDIENCE: z.string().url().optional(),
   })
